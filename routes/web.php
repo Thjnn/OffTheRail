@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ContactController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProductController;
 use App\Models\Category;
@@ -11,3 +12,7 @@ Route::view('/san-pham', 'products.index', ['category' => null])->name('products
 Route::get('/san-pham/{product:slug}', [ProductController::class, 'show'])->name('products.show');
 Route::get('/danh-muc/{category:slug}', fn (Category $category) => view('products.index', ['category' => $category]))
     ->name('categories.show');
+
+Route::view('/gioi-thieu', 'pages.about')->name('about');
+Route::get('/lien-he', [ContactController::class, 'show'])->name('contact');
+Route::post('/lien-he', [ContactController::class, 'store'])->name('contact.store');
