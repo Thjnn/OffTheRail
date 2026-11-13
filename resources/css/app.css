@@ -1,9 +1,104 @@
 @import 'tailwindcss';
+@import 'swiper/css';
+@import 'swiper/css/pagination';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Token của web khách (phong cách "tạp chí"). Màu nhấn được layout ghi đè theo cài đặt shop. */
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-sans: var(--font-be-vietnam-pro), ui-sans-serif, system-ui, sans-serif;
+    --font-serif: var(--font-fraunces), ui-serif, Georgia, serif;
+
+    --color-bg: #f4f2ed;
+    --color-surface: #ffffff;
+    --color-surface-2: #edeae3;
+    --color-ink: #1b1b1f;
+    --color-muted: #6e7078;
+    --color-line: #ddd9d0;
+    --color-accent: #2b3360;
+    --color-sale: #c43236;
+    --color-ok: #2e7d32;
+
+    --radius-card: 16px;
+    --radius-chip: 10px;
+
+    --shadow-soft: 0 2px 8px rgb(20 20 30 / 0.06);
+    --shadow-lift: 0 18px 44px rgb(20 20 30 / 0.14);
+}
+
+@layer base {
+    html.dark {
+        --color-bg: #0e0f12;
+        --color-surface: #17181d;
+        --color-surface-2: #1f2128;
+        --color-ink: #ececea;
+        --color-muted: #9aa0ad;
+        --color-line: #2a2c34;
+        --color-accent: #8fa0e0;
+        --color-sale: #f07a7a;
+        --color-ok: #6fd08a;
+        color-scheme: dark;
+    }
+
+    body {
+        @apply bg-bg font-sans text-ink antialiased;
+    }
+
+    :focus-visible {
+        outline: 2px solid var(--color-accent);
+        outline-offset: 3px;
+    }
+
+    [x-cloak] {
+        display: none !important;
+    }
+}
+
+@layer components {
+    .eyebrow {
+        @apply text-[11px] font-semibold tracking-[0.22em] text-muted uppercase;
+    }
+
+    .display {
+        @apply font-serif leading-[1.08] font-normal tracking-tight;
+    }
+
+    .display em {
+        @apply text-accent italic;
+    }
+
+    .btn {
+        @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition duration-200;
+    }
+
+    .btn-primary {
+        @apply bg-accent text-white hover:opacity-90 dark:text-bg;
+    }
+
+    .btn-outline {
+        @apply border border-ink/70 text-ink hover:bg-ink hover:text-bg;
+    }
+
+    .btn[disabled] {
+        @apply cursor-not-allowed opacity-45;
+    }
+
+    .icon-btn {
+        @apply grid size-10 place-items-center rounded-full border border-line bg-surface text-ink transition duration-200 hover:border-accent;
+    }
+
+    .no-scrollbar {
+        scrollbar-width: none;
+    }
+
+    .no-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+}
+
+.swiper-pagination-bullet-active {
+    background: var(--color-accent);
 }
