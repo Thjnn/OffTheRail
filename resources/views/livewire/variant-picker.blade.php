@@ -51,7 +51,7 @@
     @if ($variants->isNotEmpty())
         <div class="flex flex-wrap gap-2" role="radiogroup" aria-label="Chọn size">
             @foreach ($variants as $option)
-                <button type="button" wire:click="$set('size', '{{ $option->size }}')" wire:key="size-{{ $option->id }}"
+                <button type="button" wire:click="$set('size', @js($option->size))" wire:key="size-{{ $option->id }}"
                     role="radio" aria-checked="{{ $option->size === $size ? 'true' : 'false' }}"
                     data-size="{{ $option->size }}" @disabled($option->stock < 1)
                     class="min-w-12 flex-1 rounded-chip border px-3 py-2.5 text-sm transition

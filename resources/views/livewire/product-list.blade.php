@@ -16,7 +16,7 @@
                 <div class="flex flex-col items-start gap-2">
                     <button type="button" wire:click="$set('danhMuc', '')" class="{{ $danhMuc === '' ? 'font-semibold text-accent' : 'hover:text-accent' }}">Tất cả</button>
                     @foreach ($categories as $category)
-                        <button type="button" wire:click="$set('danhMuc', '{{ $category->slug }}')"
+                        <button type="button" wire:click="$set('danhMuc', @js($category->slug))"
                             class="{{ $danhMuc === $category->slug ? 'font-semibold text-accent' : 'hover:text-accent' }}">{{ $category->name }}</button>
                     @endforeach
                 </div>
@@ -26,7 +26,7 @@
                 <p class="eyebrow mb-3">Size còn hàng</p>
                 <div class="flex flex-wrap gap-2">
                     @foreach ($sizes as $option)
-                        <button type="button" wire:click="$set('size', '{{ $size === $option ? '' : $option }}')" aria-pressed="{{ $size === $option ? 'true' : 'false' }}"
+                        <button type="button" wire:click="$set('size', @js($size === $option ? '' : $option))" aria-pressed="{{ $size === $option ? 'true' : 'false' }}"
                             class="min-w-10 rounded-chip border px-2.5 py-1.5 text-xs {{ $size === $option ? 'border-ink bg-ink text-bg' : 'border-line bg-surface hover:border-accent' }}">{{ $option }}</button>
                     @endforeach
                 </div>

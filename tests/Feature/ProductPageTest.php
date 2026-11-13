@@ -126,4 +126,15 @@ class ProductPageTest extends TestCase
             ->assertSee('300.000đ')
             ->set('size', 'M')->assertSee('320.000đ');
     }
+
+    public function test_size_with_a_quote_does_not_break_the_click_handler(): void
+    {
+        $p = Product::factory()->create();
+        $c = ProductColor::factory()->for($p)->create();
+        ProductVariant::factory()->for($p)->for($c, 'color')->create(['size' => "5'6", 'stock' => 3]);
+
+        Livewire::test(VariantPicker::class, ['product' => $p])
+            ->assertDontSeeHtml("'5&#039;6'")
+            ->set('size', "5'6")->assertSet('size', "5'6");
+    }
 }
