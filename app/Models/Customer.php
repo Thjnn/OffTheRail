@@ -55,6 +55,15 @@ class Customer extends Authenticatable
             ->latest('id');
     }
 
+    /** Tính lại số đơn (trừ đơn huỷ/hoàn) và tổng chi tiêu (chỉ tiền đã nhận) từ bảng orders. */
+    public function refreshStats(): void
+    {
+        $this->forceFill([
+            'orders_count' => $this->orders()->whereNotIn('status', ['cancelled', 'returned'])->count(),
+            'total_spent' => (int) $this->orders()->where('payment_status', 'paid')->sum('total'),
+        ])->saveQuietly();
+    }
+
     public function hasAccount(): bool
     {
         return $this->password !== null;

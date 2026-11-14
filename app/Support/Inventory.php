@@ -13,7 +13,7 @@ class Inventory
      * Trừ kho có điều kiện: chỉ trừ khi còn đủ hàng, nên web và quầy không thể cùng bán chiếc cuối.
      * Trả false (không đổi gì) nếu không đủ hàng.
      */
-    public static function take(int $variantId, int $qty, string $reason, ?Order $order = null): bool
+    public static function take(int $variantId, int $qty, string $reason, ?Order $order = null, ?int $userId = null, ?string $note = null): bool
     {
         $affected = ProductVariant::whereKey($variantId)->where('stock', '>=', $qty)->decrement('stock', $qty);
 
@@ -21,22 +21,23 @@ class Inventory
             return false;
         }
 
-        self::log($variantId, -$qty, $reason, $order);
+        self::log($variantId, -$qty, $reason, $order, $userId, $note);
 
         return true;
     }
 
-    public static function putBack(int $variantId, int $qty, string $reason, ?Order $order = null): void
+    public static function putBack(int $variantId, int $qty, string $reason, ?Order $order = null, ?int $userId = null, ?string $note = null): void
     {
         if (ProductVariant::whereKey($variantId)->increment('stock', $qty) > 0) {
-            self::log($variantId, $qty, $reason, $order);
+            self::log($variantId, $qty, $reason, $order, $userId, $note);
         }
     }
 
-    private static function log(int $variantId, int $change, string $reason, ?Order $order): void
+    private static function log(int $variantId, int $change, string $reason, ?Order $order, ?int $userId, ?string $note): void
     {
         StockMovement::create([
             'variant_id' => $variantId, 'change' => $change, 'reason' => $reason, 'order_id' => $order?->id,
+            'user_id' => $userId, 'note' => $note,
         ]);
     }
 }

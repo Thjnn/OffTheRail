@@ -3,11 +3,14 @@
 namespace App\Services;
 
 use App\Enums\OrderStatus;
+use App\Exceptions\OrderActionException;
 use App\Exceptions\OutOfStockException;
+use App\Models\ActivityLog;
 use App\Models\Customer;
 use App\Models\Order;
 use App\Models\ProductVariant;
 use App\Models\Province;
+use App\Models\User;
 use App\Models\Ward;
 use App\Support\Inventory;
 use App\Support\Phone;
@@ -107,7 +110,7 @@ class OrderService
         });
     }
 
-    /** Huỷ đơn đang chờ/đã xác nhận và hoàn kho. Trả false nếu đơn không còn huỷ được (kể cả đã huỷ rồi). */
+    /** Huỷ đơn đang chờ/đã xác nhận và hoàn kho (lệnh tự huỷ). Trả false nếu đơn không còn huỷ được (kể cả đã huỷ rồi). */
     public function cancel(Order $order, ?string $note = null, ?int $userId = null): bool
     {
         $cancelled = DB::transaction(function () use ($order, $note, $userId) {
@@ -117,17 +120,7 @@ class OrderService
                 return false;
             }
 
-            foreach ($locked->items as $item) {
-                if ($item->variant_id !== null) {
-                    Inventory::putBack($item->variant_id, $item->qty, 'cancel', $locked);
-                }
-            }
-
-            $from = $locked->status;
-            $locked->update(['status' => OrderStatus::Cancelled]);
-            $locked->statusLogs()->create([
-                'from' => $from->value, 'to' => OrderStatus::Cancelled, 'user_id' => $userId, 'note' => $note,
-            ]);
+            $this->restock($locked, OrderStatus::Cancelled, $userId, $note);
 
             return true;
         });
@@ -135,6 +128,117 @@ class OrderService
         $order->refresh();
 
         return $cancelled;
+    }
+
+    /** @return list<OrderStatus> các trạng thái đơn được phép chuyển sang từ trạng thái hiện tại */
+    public function nextStatuses(Order $order): array
+    {
+        if ($order->channel !== 'web') {
+            // Đơn Shopee/quầy tạo ra đã hoàn thành; chỉ còn đường huỷ (hoàn kho).
+            return $order->status === OrderStatus::Completed ? [OrderStatus::Cancelled] : [];
+        }
+
+        return match ($order->status) {
+            OrderStatus::Pending => [OrderStatus::Confirmed, OrderStatus::Cancelled],
+            OrderStatus::Confirmed => [OrderStatus::Shipping, OrderStatus::Cancelled],
+            OrderStatus::Shipping => [OrderStatus::Completed, OrderStatus::Returned],
+            OrderStatus::Completed => [OrderStatus::Returned],
+            OrderStatus::Cancelled, OrderStatus::Returned => [],
+        };
+    }
+
+    /**
+     * Chuyển trạng thái đơn. Kiểm tra trên bản ghi đã khoá, nên hai người bấm cùng lúc
+     * (hay bấm hai lần) thì người sau nhận thông báo, kho không bị hoàn hai lần.
+     *
+     * @throws OrderActionException
+     */
+    public function transition(Order $order, OrderStatus $to, User $by, ?string $note = null, ?string $trackingCode = null): void
+    {
+        DB::transaction(function () use ($order, $to, $by, $note, $trackingCode) {
+            $locked = Order::whereKey($order->id)->lockForUpdate()->firstOrFail();
+            $from = $locked->status;
+
+            if (! in_array($to, $this->nextStatuses($locked), true)) {
+                throw new OrderActionException("Đơn đang ở trạng thái «{$from->label()}», không chuyển sang «{$to->label()}» được.");
+            }
+
+            if ($to === OrderStatus::Shipping) {
+                $trackingCode = trim((string) $trackingCode);
+
+                if ($trackingCode === '') {
+                    throw new OrderActionException('Cần nhập mã vận đơn.');
+                }
+
+                $locked->tracking_code = $trackingCode;
+            }
+
+            if (in_array($to, [OrderStatus::Cancelled, OrderStatus::Returned], true)) {
+                $wasPaid = $locked->payment_status === 'paid';
+
+                if (($wasPaid || $from === OrderStatus::Completed) && ! $by->isOwner()) {
+                    throw new OrderActionException('Chỉ chủ shop được huỷ/hoàn đơn đã thanh toán.');
+                }
+
+                if ($wasPaid) {
+                    $locked->payment_status = 'refunded';
+                }
+
+                $this->restock($locked, $to, $by->id, $note);
+
+                ActivityLog::record($to === OrderStatus::Cancelled ? 'order.cancel' : 'order.return', $locked,
+                    ['status' => $from->value], ['status' => $to->value, 'payment_status' => $locked->payment_status]);
+
+                return;
+            }
+
+            if ($to === OrderStatus::Completed && $locked->payment_status === 'unpaid') {
+                $locked->payment_status = 'paid'; // COD: tiền thu khi giao xong
+                $locked->paid_at = now();
+            }
+
+            $locked->status = $to;
+            $locked->save();
+            $locked->statusLogs()->create(['from' => $from->value, 'to' => $to, 'user_id' => $by->id, 'note' => $note]);
+        });
+
+        $order->refresh();
+    }
+
+    /** Xác nhận đã nhận tiền (chuyển khoản, hoặc COD thu trước). @throws OrderActionException */
+    public function markPaid(Order $order, User $by): void
+    {
+        DB::transaction(function () use ($order, $by) {
+            $locked = Order::whereKey($order->id)->lockForUpdate()->firstOrFail();
+
+            if ($locked->payment_status !== 'unpaid' || in_array($locked->status, [OrderStatus::Cancelled, OrderStatus::Returned], true)) {
+                throw new OrderActionException('Đơn này không ở trạng thái chờ thanh toán.');
+            }
+
+            $locked->update(['payment_status' => 'paid', 'paid_at' => now()]);
+            $locked->statusLogs()->create([
+                'from' => $locked->status->value, 'to' => $locked->status, 'user_id' => $by->id, 'note' => 'Đã nhận tiền',
+            ]);
+        });
+
+        $order->refresh();
+    }
+
+    /** Hoàn kho từng món rồi đặt trạng thái huỷ/hoàn. Gọi trong transaction, với đơn đã khoá. */
+    private function restock(Order $locked, OrderStatus $to, ?int $userId, ?string $note): void
+    {
+        $reason = $to === OrderStatus::Returned ? 'return' : 'cancel';
+
+        foreach ($locked->items as $item) {
+            if ($item->variant_id !== null) {
+                Inventory::putBack($item->variant_id, $item->qty, $reason, $locked, $userId);
+            }
+        }
+
+        $from = $locked->status;
+        $locked->status = $to;
+        $locked->save();
+        $locked->statusLogs()->create(['from' => $from->value, 'to' => $to, 'user_id' => $userId, 'note' => $note]);
     }
 
     private function label(ProductVariant $variant): string

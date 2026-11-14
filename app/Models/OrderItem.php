@@ -21,6 +21,11 @@ class OrderItem extends Model
         return $this->belongsTo(Order::class);
     }
 
+    public function variant(): BelongsTo
+    {
+        return $this->belongsTo(ProductVariant::class);
+    }
+
     public function total(): int
     {
         return $this->unit_price * $this->qty;

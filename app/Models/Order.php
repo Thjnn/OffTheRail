@@ -30,6 +30,12 @@ class Order extends Model
         ];
     }
 
+    protected static function booted(): void
+    {
+        // Mọi thay đổi đơn (đặt, chuyển trạng thái, nhận tiền) đều cập nhật số liệu khách hàng.
+        static::saved(fn (Order $order) => $order->customer?->refreshStats());
+    }
+
     public function getRouteKeyName(): string
     {
         return 'code';
