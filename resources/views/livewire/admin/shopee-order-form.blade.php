@@ -1,4 +1,3 @@
-@php($money = fn ($v) => \App\Support\Money::vnd((int) $v))
 <form wire:submit="save" class="grid max-w-5xl gap-5 lg:grid-cols-[1fr_320px]">
     <section class="a-card p-4">
         <label class="a-label" for="search">Tìm món (SKU, mã vạch, tên sản phẩm)</label>
@@ -33,7 +32,7 @@
                     @continue(! $v)
                     <tr wire:key="l{{ $id }}">
                         <td>{{ $v->product->name }} <span class="text-a-muted">· {{ $v->color?->name }} / {{ $v->size }}</span></td>
-                        <td class="text-right">{{ $money($v->price ?? $v->product->price) }}</td>
+                        <td class="text-right">{{ \App\Support\Money::vnd($v->price ?? $v->product->price) }}</td>
                         <td class="text-center whitespace-nowrap">
                             <button type="button" class="a-btn px-2 py-0.5" wire:click="decrease({{ $id }})" aria-label="Bớt">−</button>
                             <span class="mx-2">{{ $qty }}</span>
@@ -54,7 +53,7 @@
             <input id="externalCode" wire:model="externalCode" class="a-input font-mono uppercase" maxlength="40" autocomplete="off">
             @error('externalCode')<p class="a-error">{{ $message }}</p>@enderror
         </div>
-        <div class="flex justify-between text-a-muted"><span>Tạm tính theo giá web</span><span>{{ $money($subtotal) }}</span></div>
+        <div class="flex justify-between text-a-muted"><span>Tạm tính theo giá web</span><span>{{ \App\Support\Money::vnd($subtotal) }}</span></div>
         <div>
             <label class="a-label" for="amount">Số tiền thực nhận từ Shopee (đ)</label>
             <input id="amount" type="number" min="0" step="1000" wire:model="amount" class="a-input">

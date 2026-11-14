@@ -10,7 +10,16 @@ class ProductVariant extends Model
 {
     use HasFactory;
 
+    /** Còn từng này chiếc trở xuống là "sắp hết" (trang sản phẩm cũng hiện "chỉ còn N"). */
+    public const LOW_STOCK = 2;
+
     protected $fillable = ['product_id', 'product_color_id', 'size', 'sku', 'barcode', 'price', 'stock'];
+
+    public function scopeLowStock(\Illuminate\Database\Eloquent\Builder $query): void
+    {
+        $query->where('stock', '<=', self::LOW_STOCK)
+            ->whereHas('product', fn ($q) => $q->where('is_active', true));
+    }
 
     protected function casts(): array
     {
