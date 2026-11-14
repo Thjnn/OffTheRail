@@ -12,7 +12,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // Khách hàng (guard web). Trang đăng nhập nhân sự /admin sẽ thêm ở Kế hoạch 3.
+        $middleware->redirectGuestsTo('/tai-khoan/dang-nhap');
+        $middleware->redirectUsersTo('/tai-khoan');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

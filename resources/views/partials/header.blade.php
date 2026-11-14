@@ -24,6 +24,9 @@
                 @click="const dark = document.documentElement.classList.toggle('dark'); try { localStorage.setItem('otr_theme', JSON.stringify(dark ? 'dark' : 'light')) } catch (e) {}">
                 <svg class="size-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>
             </button>
+            <a href="{{ url('/tai-khoan') }}" class="icon-btn hidden sm:grid" aria-label="{{ auth('web')->check() ? 'Tài khoản của tôi' : 'Đăng nhập' }}">
+                <svg class="size-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-3.5 4.5-5 8-5s6.5 1.5 8 5"/></svg>
+            </a>
             {{-- Giỏ hàng: mở ngăn kéo nếu trang có, không thì đi tới /gio-hang --}}
             <a href="{{ url('/gio-hang') }}" class="icon-btn relative" aria-label="Giỏ hàng" data-cart-icon
                 x-data="{ count: {{ app(\App\Support\Cart::class)->count() }} }" @cart-updated.window="count = $event.detail.count"
