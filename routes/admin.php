@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\AuthController;
 use Illuminate\Support\Facades\Route;
 
@@ -13,4 +14,8 @@ Route::middleware('guest:admin')->group(function () {
 Route::middleware(['auth:admin', 'admin.active'])->group(function () {
     Route::post('/dang-xuat', [AuthController::class, 'logout'])->name('logout');
     Route::view('/', 'admin.dashboard')->name('dashboard');
+
+    Route::middleware('can:owner')->group(function () {
+        Route::get('/nhat-ky', ActivityLogController::class)->name('activity');
+    });
 });
