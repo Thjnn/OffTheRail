@@ -25,4 +25,10 @@ return [
     'bank_bin' => '',
     'bank_account_no' => '',
     'bank_account_name' => '',
+
+    // Nhân viên giảm giá tay tối đa bao nhiêu % ở quầy (Kế hoạch 4). Chủ shop không bị giới hạn.
+    'staff_max_discount_percent' => 10,
+
+    // Email nhận báo khi có đơn web mới. Trống thì không gửi.
+    'notify_email' => '',
 ];

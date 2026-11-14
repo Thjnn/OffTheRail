@@ -56,21 +56,11 @@ Trên máy chủ thật, thêm một dòng cron gọi `php artisan schedule:run`
 
 ### Bật chuyển khoản VietQR
 
-Lựa chọn chuyển khoản chỉ hiện khi shop đã có tài khoản ngân hàng. Giao diện cài đặt có ở Kế hoạch 3; tạm thời ghi ba giá trị vào bảng `settings`:
-
-```bash
-php artisan tinker
->>> $s = app(App\Support\ShopSettings::class);
->>> $s->set('bank_bin', '970436');            // mã BIN ngân hàng (970436 = Vietcombank)
->>> $s->set('bank_account_no', '0123456789');
->>> $s->set('bank_account_name', 'NGUYEN VAN A');
-```
-
-Ảnh mã QR lấy từ dịch vụ `img.vietqr.io`.
+Lựa chọn chuyển khoản chỉ hiện khi shop đã có tài khoản ngân hàng. Vào **Admin → Cài đặt**, điền đủ mã BIN ngân hàng (vd. `970436` là Vietcombank), số tài khoản và tên chủ tài khoản. Ảnh mã QR lấy từ dịch vụ `img.vietqr.io`.
 
 ### Đổi thông tin shop
 
-Tên, khẩu hiệu, màu chủ đạo, hotline, link Zalo/Messenger, ngưỡng freeship, phí ship theo tỉnh đều nằm trong `config/shop.php` (giá trị mặc định) và có thể ghi đè bằng `ShopSettings::set()` mà không sửa code.
+Tên, logo, khẩu hiệu, màu chủ đạo, hotline, link Zalo/Messenger, ngưỡng freeship, phí ship theo tỉnh, danh sách size đều sửa trong **Admin → Cài đặt**, không cần sửa code. `config/shop.php` chỉ giữ giá trị mặc định.
 
 ## Kiểm thử
 

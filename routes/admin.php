@@ -36,6 +36,7 @@ Route::middleware(['auth:admin', 'admin.active'])->group(function () {
         // Admin thấy toàn bộ đơn của khách, kể cả đơn trước ngày đăng ký tài khoản.
         Route::view('/nhan-vien', 'admin.staff.index')->name('staff');
         Route::view('/noi-dung', 'admin.content.index')->name('content');
+        Route::view('/cai-dat', 'admin.settings')->name('settings');
         Route::view('/khach-hang', 'admin.customers.index')->name('customers');
         Route::get('/khach-hang/{customer}', fn (Customer $customer) => view('admin.customers.show', [
             'customer' => $customer->load('addresses'),
