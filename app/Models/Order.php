@@ -103,6 +103,7 @@ class Order extends Model
             'bank_transfer' => 'Chuyển khoản ngân hàng',
             'cash' => 'Tiền mặt',
             'qr' => 'Quét mã QR',
+            'shopee' => 'Shopee thanh toán',
             default => $this->payment_method,
         };
     }

@@ -15,7 +15,9 @@ use App\Models\Ward;
 use App\Support\Inventory;
 use App\Support\Phone;
 use App\Support\ShippingFee;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use InvalidArgumentException;
 
 class OrderService
@@ -108,6 +110,95 @@ class OrderService
 
             return $order;
         });
+    }
+
+    /**
+     * Nhập tay một đơn đã bán trên Shopee: trừ kho chung bằng cùng câu UPDATE có điều kiện,
+     * đơn hoàn thành + đã trả ngay, không gắn ca (tiền không đi qua két).
+     *
+     * @param  array<int, int>  $items  [variantId => qty]
+     *
+     * @throws OrderActionException mã trống hoặc đã nhập
+     * @throws OutOfStockException không đủ hàng (không có gì được lưu)
+     */
+    public function placeShopeeOrder(string $externalCode, array $items, int $amountReceived, User $by): Order
+    {
+        $code = Str::upper(trim($externalCode));
+        $items = array_filter(array_map('intval', $items), fn (int $qty) => $qty > 0);
+
+        if ($code === '') {
+            throw new OrderActionException('Cần nhập mã đơn Shopee.');
+        }
+
+        if ($items === []) {
+            throw new OrderActionException('Đơn cần ít nhất một món.');
+        }
+
+        $duplicate = fn () => new OrderActionException("Đơn Shopee {$code} đã được nhập.");
+
+        if (Order::where('channel', 'shopee')->where('external_code', $code)->exists()) {
+            throw $duplicate();
+        }
+
+        try {
+            return DB::transaction(function () use ($code, $items, $amountReceived, $by) {
+                $variants = ProductVariant::with('product', 'color')->whereKey(array_keys($items))->get()->keyBy('id');
+                $subtotal = 0;
+
+                foreach ($items as $variantId => $qty) {
+                    $variant = $variants->get($variantId) ?? throw new OutOfStockException(['một sản phẩm đã bị xoá']);
+                    $subtotal += ($variant->price ?? $variant->product->price) * $qty;
+                }
+
+                $order = Order::create([
+                    'code' => Order::generateCode(),
+                    'channel' => 'shopee',
+                    'external_code' => $code,
+                    'customer_name' => 'Khách Shopee',
+                    'status' => OrderStatus::Completed,
+                    'payment_method' => 'shopee',
+                    'payment_status' => 'paid',
+                    'paid_at' => now(),
+                    'subtotal' => $subtotal,
+                    'discount' => max(0, $subtotal - $amountReceived),
+                    'shipping_fee' => 0,
+                    'total' => $amountReceived,
+                    'staff_id' => $by->id,
+                ]);
+
+                $unavailable = [];
+
+                foreach ($items as $variantId => $qty) {
+                    $variant = $variants->get($variantId);
+
+                    if (! Inventory::take($variant->id, $qty, 'sale', $order, $by->id)) {
+                        $unavailable[] = $this->label($variant);
+
+                        continue;
+                    }
+
+                    $order->items()->create([
+                        'variant_id' => $variant->id,
+                        'name' => $variant->product->name,
+                        'color' => $variant->color?->name,
+                        'size' => $variant->size,
+                        'sku' => $variant->sku,
+                        'unit_price' => $variant->price ?? $variant->product->price,
+                        'qty' => $qty,
+                    ]);
+                }
+
+                if ($unavailable !== []) {
+                    throw new OutOfStockException($unavailable);
+                }
+
+                $order->statusLogs()->create(['from' => null, 'to' => OrderStatus::Completed, 'user_id' => $by->id]);
+
+                return $order;
+            });
+        } catch (UniqueConstraintViolationException) {
+            throw $duplicate(); // hai người nhập cùng mã cùng lúc: chỉ mục unique chặn người sau
+        }
     }
 
     /** Huỷ đơn đang chờ/đã xác nhận và hoàn kho (lệnh tự huỷ). Trả false nếu đơn không còn huỷ được (kể cả đã huỷ rồi). */
