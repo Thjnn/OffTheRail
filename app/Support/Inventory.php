@@ -2,7 +2,11 @@
 
 namespace App\Support;
 
+use App\Models\ActivityLog;
 use App\Models\Order;
+use App\Models\User;
+use Illuminate\Support\Facades\DB;
+use InvalidArgumentException;
 use App\Models\ProductVariant;
 use App\Models\StockMovement;
 
@@ -31,6 +35,37 @@ class Inventory
         if (ProductVariant::whereKey($variantId)->increment('stock', $qty) > 0) {
             self::log($variantId, $qty, $reason, $order, $userId, $note);
         }
+    }
+
+    /**
+     * Điều chỉnh kho tay (chỉ chủ shop): `import` cộng thêm $qty (≥ 1), `count` đặt tồn = $qty (≥ 0, ghi lý do `adjust`).
+     * Chênh lệch tính trên số đã khoá, nên đơn bán chen giữa không bị ghi đè sai. Trả tồn mới.
+     *
+     * @throws InvalidArgumentException tham số sai hoặc thiếu lý do
+     */
+    public static function adjust(int $variantId, string $mode, int $qty, string $note, User $by): int
+    {
+        $note = trim($note);
+
+        if ($note === '' || ! in_array($mode, ['import', 'count'], true) || ($mode === 'import' ? $qty < 1 : $qty < 0)) {
+            throw new InvalidArgumentException('Điều chỉnh kho không hợp lệ.');
+        }
+
+        return DB::transaction(function () use ($variantId, $mode, $qty, $note, $by) {
+            $variant = ProductVariant::whereKey($variantId)->lockForUpdate()->firstOrFail();
+            $old = $variant->stock;
+            $new = $mode === 'import' ? $old + $qty : $qty;
+
+            if ($new === $old) {
+                return $old;
+            }
+
+            $variant->update(['stock' => $new]);
+            self::log($variant->id, $new - $old, $mode === 'import' ? 'import' : 'adjust', null, $by->id, $note);
+            ActivityLog::record('stock.adjust', $variant, ['stock' => $old], ['stock' => $new, 'note' => $note], $by);
+
+            return $new;
+        });
     }
 
     private static function log(int $variantId, int $change, string $reason, ?Order $order, ?int $userId, ?string $note): void

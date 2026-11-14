@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\OrderExportController;
+use App\Http\Controllers\Admin\StockExportController;
 use App\Models\Product;
 use Illuminate\Support\Facades\Route;
 
@@ -27,6 +28,8 @@ Route::middleware(['auth:admin', 'admin.active'])->group(function () {
     Route::get('/don-hang/{order:code}/in', [OrderController::class, 'print'])->name('orders.print');
 
     Route::view('/san-pham', 'admin.products.index')->name('products');
+    Route::view('/kho', 'admin.stock.index')->name('stock');
+    Route::get('/kho/xuat-excel', StockExportController::class)->middleware('can:owner')->name('stock.export');
 
     Route::middleware('can:owner')->group(function () {
         Route::get('/san-pham/tao', fn () => view('admin.products.form', ['product' => null]))->name('products.create');

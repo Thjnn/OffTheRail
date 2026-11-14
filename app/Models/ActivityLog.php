@@ -36,10 +36,10 @@ class ActivityLog extends Model
         return $this->morphTo();
     }
 
-    public static function record(string $action, ?Model $subject = null, array $old = [], array $new = []): self
+    public static function record(string $action, ?Model $subject = null, array $old = [], array $new = [], ?User $by = null): self
     {
         return static::create([
-            'user_id' => auth('admin')->id(),
+            'user_id' => $by?->id ?? auth('admin')->id(),
             'action' => $action,
             'subject_type' => $subject?->getMorphClass(),
             'subject_id' => $subject?->getKey(),
