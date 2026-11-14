@@ -34,6 +34,11 @@ class Customer extends Authenticatable
         return $this->hasMany(CustomerAddress::class)->orderByDesc('is_default')->orderByDesc('id');
     }
 
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class);
+    }
+
     public function wishlist(): BelongsToMany
     {
         return $this->belongsToMany(Product::class, 'wishlists')->withTimestamps();

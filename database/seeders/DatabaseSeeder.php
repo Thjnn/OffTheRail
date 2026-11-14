@@ -12,6 +12,7 @@ class DatabaseSeeder extends Seeder
             CatalogSeeder::class,
             HomeSeeder::class,
             ProvinceSeeder::class,
+            DemoCustomerSeeder::class,
         ]);
     }
 }
