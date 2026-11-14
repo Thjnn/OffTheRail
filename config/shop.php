@@ -13,4 +13,8 @@ return [
     'free_shipping_threshold' => 500000,
     'sizes' => ['XS', 'S', 'M', 'L', 'XL'],
     'policy_lines' => ['Freeship đơn từ 500k', 'Đổi size trong 7 ngày'],
+
+    // Phí ship: mức mặc định và mức riêng theo mã tỉnh, ví dụ ['79' => 20000]
+    'shipping_fee_default' => 30000,
+    'shipping_fees' => [],
 ];
