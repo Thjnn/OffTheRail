@@ -58,7 +58,7 @@ class CatalogSeeder extends Seeder
                     ]);
                     $variant->barcode ??= 'tmp-'.$variant->sku;
                     $variant->save();
-                    $variant->update(['barcode' => '893'.str_pad((string) $variant->id, 9, '0', STR_PAD_LEFT)]);
+                    $variant->update(['barcode' => $variant->defaultBarcode()]);
                 }
             }
 

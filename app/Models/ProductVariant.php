@@ -21,6 +21,12 @@ class ProductVariant extends Model
             ->whereHas('product', fn ($q) => $q->where('is_active', true));
     }
 
+    /** Mã vạch mặc định: đầu 893 (Việt Nam) + id đệm 9 số. */
+    public function defaultBarcode(): string
+    {
+        return '893'.str_pad((string) $this->id, 9, '0', STR_PAD_LEFT);
+    }
+
     protected function casts(): array
     {
         return ['price' => 'integer', 'stock' => 'integer'];

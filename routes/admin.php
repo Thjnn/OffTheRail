@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\OrderExportController;
+use App\Models\Product;
 use Illuminate\Support\Facades\Route;
 
 // Nạp trong bootstrap/app.php với middleware `web`, prefix `admin`, tên `admin.`.
@@ -25,7 +26,12 @@ Route::middleware(['auth:admin', 'admin.active'])->group(function () {
     Route::post('/don-hang/{order:code}/da-thanh-toan', [OrderController::class, 'markPaid'])->name('orders.paid');
     Route::get('/don-hang/{order:code}/in', [OrderController::class, 'print'])->name('orders.print');
 
+    Route::view('/san-pham', 'admin.products.index')->name('products');
+
     Route::middleware('can:owner')->group(function () {
+        Route::get('/san-pham/tao', fn () => view('admin.products.form', ['product' => null]))->name('products.create');
+        Route::get('/san-pham/{product:id}/sua', fn (Product $product) => view('admin.products.form', ['product' => $product]))->name('products.edit');
+
         Route::get('/nhat-ky', ActivityLogController::class)->name('activity');
     });
 });
