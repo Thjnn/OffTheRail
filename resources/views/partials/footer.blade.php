@@ -20,6 +20,7 @@
             <ul class="space-y-2 text-sm">
                 <li><a class="hover:text-accent" href="{{ url('/gioi-thieu') }}">Về chúng tôi</a></li>
                 <li><a class="hover:text-accent" href="{{ url('/lien-he') }}">Liên hệ</a></li>
+                <li><a class="hover:text-accent" href="{{ url('/tra-cuu-don') }}">Tra cứu đơn</a></li>
                 @foreach ((array) shop('policy_lines', []) as $line)
                     <li class="text-muted">{{ $line }}</li>
                 @endforeach

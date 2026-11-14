@@ -18,6 +18,8 @@ Route::view('/gio-hang', 'cart.index')->name('cart');
 Route::view('/thanh-toan', 'checkout.index')->name('checkout');
 Route::get('/don-hang/{order:code}/thanh-cong', [OrderController::class, 'success'])
     ->middleware('throttle:30,1')->name('orders.success');
+Route::get('/tra-cuu-don', [OrderController::class, 'lookupForm'])->name('orders.lookup');
+Route::post('/tra-cuu-don', [OrderController::class, 'lookup'])->middleware('throttle:10,1');
 
 Route::view('/gioi-thieu', 'pages.about')->name('about');
 Route::get('/lien-he', [ContactController::class, 'show'])->name('contact');
