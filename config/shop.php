@@ -17,4 +17,9 @@ return [
     // Phí ship: mức mặc định và mức riêng theo mã tỉnh, ví dụ ['79' => 20000]
     'shipping_fee_default' => 30000,
     'shipping_fees' => [],
+
+    // Tài khoản nhận chuyển khoản (VietQR). Để trống thì ẩn lựa chọn chuyển khoản.
+    'bank_bin' => '',
+    'bank_account_no' => '',
+    'bank_account_name' => '',
 ];
