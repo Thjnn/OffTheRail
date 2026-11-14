@@ -1,0 +1,88 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+
+/* Admin "gọn kiểu công cụ": nền xám nhạt, chữ không chân, viền mảnh. Màu nhấn = màu thương hiệu (layout ghi đè). */
+@theme {
+    --font-sans: var(--font-be-vietnam-pro), ui-sans-serif, system-ui, sans-serif;
+
+    --color-a-bg: #f7f7f8;
+    --color-a-surface: #ffffff;
+    --color-a-ink: #18181b;
+    --color-a-muted: #71717a;
+    --color-a-line: #e4e4e7;
+    --color-a-soft: #f4f4f5;
+    --color-accent: #2b3360;
+    --color-a-up: #16a34a;
+    --color-a-down: #c43236;
+}
+
+@layer base {
+    body {
+        @apply bg-a-bg font-sans text-sm text-a-ink antialiased;
+    }
+
+    :focus-visible {
+        outline: 2px solid var(--color-accent);
+        outline-offset: 2px;
+    }
+
+    [x-cloak] {
+        display: none !important;
+    }
+}
+
+@layer components {
+    .a-card {
+        @apply rounded-lg border border-a-line bg-a-surface;
+    }
+
+    .a-btn {
+        @apply inline-flex items-center justify-center gap-1.5 rounded-md border border-a-line bg-a-surface px-3 py-1.5 text-sm font-medium text-a-ink transition hover:bg-a-soft disabled:cursor-not-allowed disabled:opacity-50;
+    }
+
+    .a-btn-primary {
+        @apply border-accent bg-accent text-white hover:bg-accent hover:opacity-90;
+    }
+
+    .a-btn-danger {
+        @apply border-a-down/40 text-a-down hover:bg-a-down/5;
+    }
+
+    .a-input {
+        @apply w-full rounded-md border border-a-line bg-a-surface px-2.5 py-1.5 text-sm text-a-ink placeholder:text-a-muted/70 focus:border-accent focus:outline-none;
+    }
+
+    .a-label {
+        @apply mb-1 block text-xs font-medium text-a-muted;
+    }
+
+    .a-error {
+        @apply mt-1 text-xs text-a-down;
+    }
+
+    .a-table {
+        @apply w-full text-left text-sm;
+    }
+
+    .a-table thead th {
+        @apply border-b border-a-line bg-a-soft px-3 py-2 text-xs font-medium whitespace-nowrap text-a-muted;
+    }
+
+    .a-table tbody td {
+        @apply border-b border-a-line px-3 py-2 align-middle;
+    }
+
+    .a-table tbody tr:last-child td {
+        @apply border-b-0;
+    }
+
+    .a-table tbody tr:hover td {
+        @apply bg-a-soft/60;
+    }
+
+    .a-badge {
+        @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap;
+    }
+}

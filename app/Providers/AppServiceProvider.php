@@ -3,9 +3,11 @@
 namespace App\Providers;
 
 use App\Models\Category;
+use App\Models\User;
 use App\Support\ShopSettings;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -18,6 +20,9 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Chỉ hai vai trò cố định. Route admin chạy `auth:admin` trước nên Gate nhận đúng User.
+        Gate::define('owner', fn ($user) => $user instanceof User && $user->isOwner());
+
         ResetPassword::toMailUsing(fn ($notifiable, string $token) => (new MailMessage)
             ->subject('Đặt lại mật khẩu · '.shop('name'))
             ->greeting('Xin chào '.$notifiable->name.',')
