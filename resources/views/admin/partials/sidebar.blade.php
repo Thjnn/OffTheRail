@@ -29,6 +29,9 @@
                 class="flex items-center gap-2.5 rounded-md px-2 py-1.5 {{ $active ? 'bg-accent/10 font-semibold text-accent' : 'text-a-ink/80 hover:bg-a-soft' }}">
                 <x-admin.icon :name="$icon" />
                 <span>{{ $label }}</span>
+                @if ($href === '/admin/don-hang')
+                    <livewire:admin.pending-badge />
+                @endif
             </a>
         @endforeach
     </nav>

@@ -16,7 +16,9 @@ use App\Support\Inventory;
 use App\Support\Phone;
 use App\Support\ShippingFee;
 use Illuminate\Database\UniqueConstraintViolationException;
+use App\Notifications\NewWebOrder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 
@@ -39,7 +41,7 @@ class OrderService
             throw new InvalidArgumentException('Đơn hàng cần ít nhất một món và số điện thoại hợp lệ.');
         }
 
-        return DB::transaction(function () use ($items, $contact, $paymentMethod, $account, $phone) {
+        $order = DB::transaction(function () use ($items, $contact, $paymentMethod, $account, $phone) {
             $variants = ProductVariant::with('product', 'color')->whereKey(array_keys($items))->get()->keyBy('id');
             $lines = [];
             $unavailable = [];
@@ -110,6 +112,26 @@ class OrderService
 
             return $order;
         });
+
+        $this->notifyShop($order);
+
+        return $order;
+    }
+
+    /** Email báo đơn mới cho shop (nếu đã cấu hình). Gửi lỗi thì chỉ ghi log, đơn vẫn thành công. */
+    private function notifyShop(Order $order): void
+    {
+        $email = shop('notify_email');
+
+        if (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return;
+        }
+
+        try {
+            Notification::route('mail', $email)->notify(new NewWebOrder($order));
+        } catch (\Throwable $e) {
+            report($e);
+        }
     }
 
     /**
