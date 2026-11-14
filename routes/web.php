@@ -13,6 +13,8 @@ Route::get('/san-pham/{product:slug}', [ProductController::class, 'show'])->name
 Route::get('/danh-muc/{category:slug}', fn (Category $category) => view('products.index', ['category' => $category]))
     ->name('categories.show');
 
+Route::view('/gio-hang', 'cart.index')->name('cart');
+
 Route::view('/gioi-thieu', 'pages.about')->name('about');
 Route::get('/lien-he', [ContactController::class, 'show'])->name('contact');
 Route::post('/lien-he', [ContactController::class, 'store'])->name('contact.store');

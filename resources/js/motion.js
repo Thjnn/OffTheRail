@@ -40,6 +40,12 @@ mm.add('(prefers-reduced-motion: no-preference)', () => {
     }
 });
 
+// Phản hồi khi giỏ hàng thay đổi: biểu tượng giỏ nảy nhẹ
+window.addEventListener('cart-updated', () => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    gsap.fromTo('[data-cart-icon]', { scale: 1.25 }, { scale: 1, duration: 0.35, ease: 'back.out(3)', overwrite: true });
+});
+
 // Livewire thay đổi DOM (lọc, phân trang) làm lệch vị trí các điểm kích hoạt.
 document.addEventListener('livewire:init', () => {
     window.Livewire.hook('morphed', () => ScrollTrigger.refresh());

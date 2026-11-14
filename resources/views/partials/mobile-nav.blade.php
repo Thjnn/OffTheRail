@@ -16,6 +16,7 @@
                 <a class="rounded-chip px-3 py-3.5 hover:bg-surface-2" href="{{ url('/danh-muc/'.$category->slug) }}">{{ $category->name }}</a>
             @endforeach
             <div class="my-3 h-px bg-line"></div>
+            <a class="rounded-chip px-3 py-3.5 hover:bg-surface-2" href="{{ url('/gio-hang') }}">Giỏ hàng</a>
             <a class="rounded-chip px-3 py-3.5 hover:bg-surface-2" href="{{ url('/gioi-thieu') }}">Giới thiệu</a>
             <a class="rounded-chip px-3 py-3.5 hover:bg-surface-2" href="{{ url('/lien-he') }}">Liên hệ</a>
         </nav>

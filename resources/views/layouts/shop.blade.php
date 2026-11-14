@@ -32,6 +32,11 @@
     @include('partials.mobile-nav')
     @include('partials.contact-fab')
 
+    {{-- Ngăn kéo giỏ hàng: trang giỏ và trang thanh toán đã có giỏ ngay trong nội dung --}}
+    @unless (request()->routeIs('cart', 'checkout'))
+        <livewire:cart-panel :drawer="true" />
+    @endunless
+
     @livewireScripts
 </body>
 </html>

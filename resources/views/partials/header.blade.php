@@ -24,10 +24,13 @@
                 @click="const dark = document.documentElement.classList.toggle('dark'); try { localStorage.setItem('otr_theme', JSON.stringify(dark ? 'dark' : 'light')) } catch (e) {}">
                 <svg class="size-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>
             </button>
-            {{-- Giỏ hàng: gắn link và số lượng ở Kế hoạch 2 --}}
-            <span class="icon-btn" aria-label="Giỏ hàng" data-cart-icon>
+            {{-- Giỏ hàng: mở ngăn kéo nếu trang có, không thì đi tới /gio-hang --}}
+            <a href="{{ url('/gio-hang') }}" class="icon-btn relative" aria-label="Giỏ hàng" data-cart-icon
+                x-data="{ count: {{ app(\App\Support\Cart::class)->count() }} }" @cart-updated.window="count = $event.detail.count"
+                @click="if (document.getElementById('cart-drawer')) { $event.preventDefault(); $dispatch('open-cart') }">
                 <svg class="size-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 8h14l-1 12H6L5 8Z"/><path d="M9 9V6.5a3 3 0 0 1 6 0V9"/></svg>
-            </span>
+                <span x-show="count > 0" x-cloak x-text="count" class="absolute -top-1 -right-1 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-accent px-1 text-[10px] font-bold text-white dark:text-bg"></span>
+            </a>
         </div>
     </div>
 
