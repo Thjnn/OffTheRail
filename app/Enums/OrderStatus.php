@@ -22,4 +22,28 @@ enum OrderStatus: string
             self::Returned => 'Đã hoàn',
         };
     }
+
+    /** Chữ trên nút chuyển sang trạng thái này trong admin. */
+    public function actionLabel(): string
+    {
+        return match ($this) {
+            self::Pending => 'Chờ xác nhận',
+            self::Confirmed => 'Xác nhận đơn',
+            self::Shipping => 'Giao cho vận chuyển',
+            self::Completed => 'Đã giao xong',
+            self::Cancelled => 'Huỷ đơn',
+            self::Returned => 'Ghi nhận hoàn hàng',
+        };
+    }
+
+    public function badgeClass(): string
+    {
+        return match ($this) {
+            self::Pending => 'bg-amber-100 text-amber-800',
+            self::Confirmed => 'bg-blue-100 text-blue-800',
+            self::Shipping => 'bg-violet-100 text-violet-800',
+            self::Completed => 'bg-green-100 text-green-800',
+            self::Cancelled, self::Returned => 'bg-zinc-100 text-zinc-600',
+        };
+    }
 }

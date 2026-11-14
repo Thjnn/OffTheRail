@@ -15,6 +15,8 @@ class Order extends Model
     // Không có ký tự dễ nhầm (0/O, 1/I). Mã đơn chỉ gồm chữ và số vì nó là nội dung chuyển khoản.
     private const CODE_ALPHABET = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
 
+    public const CHANNELS = ['web' => 'Web', 'pos' => 'Tại quầy', 'shopee' => 'Shopee'];
+
     protected $guarded = [];
 
     protected function casts(): array
@@ -54,6 +56,25 @@ class Order extends Model
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    public function staff(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'staff_id');
+    }
+
+    public function channelLabel(): string
+    {
+        return self::CHANNELS[$this->channel] ?? $this->channel;
+    }
+
+    public function paymentStatusLabel(): string
+    {
+        return match ($this->payment_status) {
+            'paid' => 'Đã trả',
+            'refunded' => 'Đã hoàn tiền',
+            default => 'Chưa trả',
+        };
     }
 
     public static function generateCode(): string
