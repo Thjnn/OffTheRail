@@ -27,7 +27,20 @@
 
         <section class="rounded-card bg-surface p-5 shadow-soft sm:p-6">
             <h2 class="mb-4 font-semibold">Địa chỉ giao hàng</h2>
-            @includeWhen(isset($savedAddresses) && $savedAddresses->isNotEmpty(), 'partials.saved-addresses')
+            @if ($savedAddresses->isNotEmpty())
+                <div class="mb-5">
+                    <p class="mb-2 text-sm font-medium">Địa chỉ đã lưu</p>
+                    <div class="flex flex-wrap gap-2">
+                        @foreach ($savedAddresses as $address)
+                            <button type="button" wire:click="useAddress({{ $address->id }})" wire:key="saved-{{ $address->id }}"
+                                class="max-w-full rounded-chip border px-3 py-2 text-left text-xs transition {{ $address->street === $street && $address->ward_code === $wardCode ? 'border-accent bg-accent/5' : 'border-line hover:border-accent' }}">
+                                <span class="block font-semibold">{{ $address->name }} · {{ $address->phone }}</span>
+                                <span class="block truncate text-muted">{{ $address->line() }}</span>
+                            </button>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
             @include('partials.address-fields')
             <div class="mt-4">
                 <label for="note" class="mb-1.5 block text-sm font-medium">Ghi chú (không bắt buộc)</label>

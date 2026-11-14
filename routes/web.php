@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Account\AccountController;
 use App\Http\Controllers\Account\AuthController;
 use App\Http\Controllers\Account\PasswordResetController;
 use App\Http\Controllers\ContactController;
@@ -37,7 +38,10 @@ Route::prefix('tai-khoan')->group(function () {
 
     Route::middleware('auth:web')->group(function () {
         Route::post('/dang-xuat', [AuthController::class, 'logout'])->name('logout');
-        Route::view('/', 'account.index')->name('account');
+        Route::get('/', [AccountController::class, 'index'])->name('account');
+        Route::get('/don-hang/{code}', [AccountController::class, 'order'])->name('account.order');
+        Route::view('/dia-chi', 'account.addresses')->name('account.addresses');
+        Route::get('/yeu-thich', [AccountController::class, 'wishlist'])->name('account.wishlist');
     });
 });
 

@@ -4,6 +4,8 @@ namespace App\Livewire;
 
 use App\Exceptions\OutOfStockException;
 use App\Livewire\Concerns\HasAddressFields;
+use App\Models\CustomerAddress;
+use App\Models\Order;
 use App\Services\OrderService;
 use App\Support\Cart;
 use App\Support\Phone;
@@ -33,11 +35,41 @@ class Checkout extends Component
 
     public string $website = ''; // ô bẫy bot
 
+    public bool $saveAddress = false;
+
     public function mount(): void
     {
         if (app(Cart::class)->isEmpty()) {
             $this->redirect('/gio-hang');
+
+            return;
         }
+
+        if ($customer = auth('web')->user()) {
+            // Người nhận mặc định là chủ tài khoản; địa chỉ mặc định chỉ điền phần nơi giao.
+            if ($default = $customer->addresses()->first()) {
+                $this->fillAddress($default);
+            }
+
+            $this->name = $customer->name;
+            $this->phone = $customer->phone;
+            $this->email = (string) $customer->email;
+        }
+    }
+
+    public function useAddress($id): void
+    {
+        $customer = auth('web')->user() ?? abort(403);
+        $this->fillAddress($customer->addresses()->whereKey(is_numeric($id) ? (int) $id : 0)->firstOrFail());
+    }
+
+    private function fillAddress(CustomerAddress $address): void
+    {
+        $this->name = $address->name;
+        $this->phone = $address->phone;
+        $this->provinceCode = $address->province_code;
+        $this->wardCode = $address->ward_code;
+        $this->street = $address->street;
     }
 
     public function place(OrderService $orders): void
@@ -88,8 +120,27 @@ class Checkout extends Component
         $this->redirect('/don-hang/'.$order->code.'/thanh-cong');
     }
 
-    /** Điểm móc cho tính năng tài khoản (lưu địa chỉ); mặc định không làm gì. */
-    protected function afterPlaced($order): void {}
+    /** Khách đã đăng nhập và tick "lưu địa chỉ": thêm vào sổ (bỏ qua nếu đã đủ số tối đa hoặc đã có). */
+    private function afterPlaced(Order $order): void
+    {
+        $customer = auth('web')->user();
+
+        if (! $this->saveAddress || $customer === null) {
+            return;
+        }
+
+        $attributes = [
+            'name' => $order->customer_name,
+            'phone' => $order->customer_phone,
+            'province_code' => $order->address['province_code'],
+            'ward_code' => $order->address['ward_code'],
+            'street' => $order->address['street'],
+        ];
+
+        if (! $customer->addresses()->where($attributes)->exists()) {
+            AddressBook::store($customer, $attributes);
+        }
+    }
 
     public function render(): View
     {
@@ -103,6 +154,7 @@ class Checkout extends Component
             'shipping' => $shipping,
             'total' => $subtotal + $shipping,
             'canTransfer' => VietQr::isConfigured(),
+            'savedAddresses' => auth('web')->user()?->addresses()->with('province', 'ward')->get() ?? collect(),
         ]);
     }
 

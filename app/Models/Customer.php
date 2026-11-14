@@ -4,6 +4,8 @@ namespace App\Models;
 
 use App\Support\Phone;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use InvalidArgumentException;
@@ -23,6 +25,29 @@ class Customer extends Authenticatable
     protected function casts(): array
     {
         return ['password' => 'hashed', 'cart' => 'array', 'registered_at' => 'datetime'];
+    }
+
+    public const MAX_ADDRESSES = 10;
+
+    public function addresses(): HasMany
+    {
+        return $this->hasMany(CustomerAddress::class)->orderByDesc('is_default')->orderByDesc('id');
+    }
+
+    public function wishlist(): BelongsToMany
+    {
+        return $this->belongsToMany(Product::class, 'wishlists')->withTimestamps();
+    }
+
+    /**
+     * Đơn hiện trong tài khoản: chỉ các đơn từ lúc đăng ký trở đi. Đơn đặt bằng SĐT này trước đó
+     * (có thể là của người dùng số cũ) chỉ xem được qua tra cứu mã đơn + SĐT.
+     */
+    public function visibleOrders(): HasMany
+    {
+        return $this->hasMany(Order::class)
+            ->where('created_at', '>=', $this->registered_at ?? now()->addCentury())
+            ->latest('id');
     }
 
     public function hasAccount(): bool

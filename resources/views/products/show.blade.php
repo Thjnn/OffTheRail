@@ -46,7 +46,10 @@
                     @if ($product->isNew()) · Mẫu mới @endif
                     @if ($product->isOnSale()) · Giảm {{ $product->discountPercent() }}% @endif
                 </p>
-                <h1 class="display text-4xl sm:text-5xl">{{ $product->name }}</h1>
+                <div class="flex items-start justify-between gap-3">
+                    <h1 class="display text-4xl sm:text-5xl">{{ $product->name }}</h1>
+                    <livewire:wishlist-button :product-id="$product->id" />
+                </div>
                 @if (filled($product->quote))
                     <p class="mt-2 font-serif text-[15px] text-muted italic">“{{ $product->quote }}”</p>
                 @endif
