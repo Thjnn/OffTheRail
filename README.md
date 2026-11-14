@@ -1,6 +1,6 @@
 # Off the Rail v2
 
-Hệ thống bán hàng cho một cửa hàng quần áo ở Việt Nam, viết bằng Laravel: web cho khách xem và đặt hàng, sau này thêm admin và máy bán tại quầy (POS).
+Hệ thống bán hàng cho một cửa hàng quần áo ở Việt Nam, viết bằng Laravel: web cho khách xem và đặt hàng, admin cho chủ shop và nhân viên; máy bán tại quầy (POS) sẽ có ở Kế hoạch 4.
 
 Thiết kế đầy đủ: [`docs/superpowers/specs/2026-11-13-offtherail-laravel-design.md`](docs/superpowers/specs/2026-11-13-offtherail-laravel-design.md)
 
@@ -14,11 +14,21 @@ Thiết kế đầy đủ: [`docs/superpowers/specs/2026-11-13-offtherail-larave
 - **Tra cứu đơn** bằng mã đơn + SĐT, có giới hạn tần suất.
 - **Tài khoản khách (tuỳ chọn):** đăng ký bằng SĐT, quên mật khẩu qua email, lịch sử đơn, sổ địa chỉ, danh sách yêu thích.
 
-Còn làm tiếp: admin (Kế hoạch 3), POS và chốt ca (Kế hoạch 4).
+- **Admin `/admin`** (đăng nhập riêng cho nhân sự, hai vai trò Chủ shop / Nhân viên):
+  - Tổng quan: doanh thu, số đơn, đơn chờ xử lý, hàng sắp hết, biểu đồ doanh thu theo kênh (Web / Tại quầy / Shopee). Nhân viên chỉ thấy doanh số của mình.
+  - Đơn hàng: lọc theo trạng thái/kênh/ngày/nhân viên, chuyển trạng thái, nhập mã vận đơn, xác nhận đã nhận tiền, huỷ/hoàn (đơn đã trả tiền chỉ chủ shop), in phiếu giao hàng, xuất Excel.
+  - Nhập tay đơn Shopee: trừ chung kho với web, chặn nhập trùng mã đơn.
+  - Sản phẩm: ma trận màu × size (SKU, mã vạch, giá riêng), ảnh kéo thả gắn theo màu, khối ảnh ↔ chữ. Không xoá được sản phẩm/biến thể đã có đơn.
+  - Kho: nhập thêm / đếm lại có ghi lý do, lịch sử biến động, xuất Excel tồn kho.
+  - Khách hàng, Nhân viên (tạo, khoá, đổi quyền, doanh số 30 ngày), Nội dung web (banner, khối trang chủ, trang giới thiệu, bảng size), Cài đặt (tên, logo, màu, liên hệ, phí ship theo tỉnh, ngân hàng VietQR, size).
+  - Nhật ký thao tác nhạy cảm: sửa giá, sửa kho, huỷ/hoàn đơn, đổi quyền, khoá tài khoản.
+  - Báo đơn web mới: số đếm trên menu (tự cập nhật 30 giây), tiếng "ting", email về địa chỉ trong Cài đặt.
+
+Còn làm tiếp: POS, chốt ca, in tem mã vạch (Kế hoạch 4).
 
 ## Công nghệ
 
-Laravel 13 · PHP 8.3 · MySQL · Livewire 4 · Tailwind CSS 4 · Vite · Swiper · GSAP · PHPUnit
+Laravel 13 · PHP 8.3 · MySQL · Livewire 4 · Tailwind CSS 4 · Vite · Swiper · GSAP · ApexCharts · OpenSpout · PHPUnit
 
 ## Chạy thử
 
@@ -41,8 +51,14 @@ Mở http://127.0.0.1:8000.
 | Vai trò | Đăng nhập | Mật khẩu |
 |---|---|---|
 | Khách hàng | SĐT `0900000001` tại `/tai-khoan/dang-nhap` | `matkhau123` |
+| Chủ shop | `owner@demo.test` tại `/admin/dang-nhap` | `matkhau123` |
+| Nhân viên | `nhanvien1@demo.test`, `nhanvien2@demo.test` | `matkhau123` |
 
-Tài khoản này có sẵn 2 đơn (1 đơn đã huỷ), 1 địa chỉ và 2 món yêu thích.
+Tài khoản khách có sẵn 2 đơn (1 đơn đã huỷ), 1 địa chỉ và 2 món yêu thích. Dữ liệu demo có thêm khoảng 200 đơn Web và Shopee trải đều từ lúc sản phẩm đầu tiên lên kệ (gần 60 ngày) để biểu đồ có số liệu.
+
+### Email báo đơn mới
+
+Điền "Email nhận báo đơn web mới" trong **Admin → Cài đặt** và cấu hình `MAIL_*` trong `.env`. Gửi mail lỗi không làm hỏng việc đặt hàng (lỗi chỉ ghi vào log).
 
 ### Lệnh định kỳ
 

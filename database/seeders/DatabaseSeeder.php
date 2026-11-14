@@ -14,6 +14,7 @@ class DatabaseSeeder extends Seeder
             HomeSeeder::class,
             ProvinceSeeder::class,
             DemoCustomerSeeder::class,
+            DemoOrderSeeder::class,
         ]);
     }
 }

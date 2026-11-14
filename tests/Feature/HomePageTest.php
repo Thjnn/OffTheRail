@@ -20,6 +20,25 @@ class HomePageTest extends TestCase
         Storage::fake('public');
     }
 
+    public function test_featured_section_ranks_best_sellers(): void
+    {
+        HomeSection::create(['type' => 'featured', 'title' => 'Bán chạy', 'config' => ['limit' => 2], 'position' => 0]);
+        $this->variant([], ['name' => 'Áo Nổi Bật Chưa Bán', 'is_featured' => true, 'published_at' => now()->subDay()]);
+        $seller = $this->variant(['stock' => 10], ['name' => 'Áo Bán Chạy', 'published_at' => now()->subDays(20)]);
+        $this->variant([], ['name' => 'Áo Thường Không Ai Mua']);
+
+        $order = app(\App\Services\OrderService::class)->placeWebOrder([$seller->id => 3], $this->contact(), 'cod');
+        // Đơn bị huỷ không tính vào bán chạy.
+        $cancelled = $this->variant(['stock' => 10], ['name' => 'Áo Bị Huỷ']);
+        $c = app(\App\Services\OrderService::class)->placeWebOrder([$cancelled->id => 5], $this->contact(['phone' => '0911111111']), 'cod');
+        app(\App\Services\OrderService::class)->cancel($c);
+
+        $this->get('/')->assertOk()
+            ->assertSeeInOrder(['Áo Bán Chạy', 'Áo Nổi Bật Chưa Bán'])
+            ->assertDontSee('Áo Bị Huỷ')
+            ->assertDontSee('Áo Thường Không Ai Mua');
+    }
+
     public function test_home_renders_sections_in_order(): void
     {
         $this->seed([CatalogSeeder::class, HomeSeeder::class]);

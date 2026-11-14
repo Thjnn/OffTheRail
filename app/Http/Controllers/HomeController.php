@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\OrderStatus;
 use App\Models\Banner;
+use App\Models\OrderItem;
 use App\Models\Category;
 use App\Models\HomeSection;
 use App\Models\Product;
@@ -28,6 +30,31 @@ class HomeController extends Controller
         ]);
     }
 
+    /** Bán chạy 60 ngày qua (bỏ đơn huỷ/hoàn); chưa đủ thì bù bằng sản phẩm nổi bật, rồi hàng mới. */
+    private function bestSellers(int $limit): Collection
+    {
+        $sold = OrderItem::query()
+            ->join('orders', 'orders.id', '=', 'order_items.order_id')
+            ->join('product_variants', 'product_variants.id', '=', 'order_items.variant_id')
+            ->whereNotIn('orders.status', [OrderStatus::Cancelled->value, OrderStatus::Returned->value])
+            ->where('orders.created_at', '>=', now()->subDays(60))
+            ->groupBy('product_variants.product_id')
+            ->orderByRaw('SUM(order_items.qty) DESC')
+            ->pluck('product_variants.product_id');
+
+        $ranked = Product::visible()->with('images', 'variants')->whereKey($sold)->get()
+            ->sortBy(fn (Product $p) => $sold->search($p->id))->values()->take($limit);
+
+        if ($ranked->count() < $limit) {
+            $ranked = $ranked->concat(Product::visible()->with('images', 'variants')
+                ->whereKeyNot($ranked->modelKeys())
+                ->orderByDesc('is_featured')->orderByDesc('published_at')
+                ->limit($limit - $ranked->count())->get());
+        }
+
+        return $ranked;
+    }
+
     private function itemsFor(HomeSection $section): Collection
     {
         $limit = max(1, min(24, (int) $section->option('limit', 8)));
@@ -35,8 +62,7 @@ class HomeController extends Controller
         return match ($section->type) {
             'new_arrivals' => Product::visible()->with('images', 'variants')
                 ->orderByDesc('published_at')->orderByDesc('id')->limit($limit)->get(),
-            'featured' => Product::visible()->with('images', 'variants')
-                ->where('is_featured', true)->orderByDesc('published_at')->limit($limit)->get(),
+            'featured' => $this->bestSellers($limit),
             'categories' => Category::whereHas('products', fn ($q) => $q->visible())
                 ->with(['products' => fn ($q) => $q->visible()->with('images')->orderByDesc('published_at')])
                 ->orderBy('position')->orderBy('id')->get(),
