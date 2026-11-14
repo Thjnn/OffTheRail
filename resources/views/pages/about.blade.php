@@ -3,14 +3,28 @@
 @section('title', 'Giới thiệu')
 
 @section('content')
+    @php
+        $custom = array_values(array_filter(array_map('trim', preg_split('/\R\s*\R/', (string) shop('about_body')))));
+    @endphp
     <div class="mx-auto max-w-5xl px-4 pt-10 lg:px-8 lg:pt-16">
         <header class="text-center" data-reveal>
             <p class="eyebrow mb-3">Câu chuyện của {{ shop('name') }}</p>
             <h1 class="display mx-auto max-w-3xl text-4xl sm:text-6xl"><em>{{ shop('tagline') }}</em></h1>
-            <p class="mx-auto mt-5 max-w-2xl leading-relaxed text-muted">
-                Chúng tôi là một xưởng nhỏ làm quần áo bắt đầu từ tranh vẽ. Mỗi mẫu chỉ làm một đợt, số lượng ít, bán hết là thôi.
-            </p>
+            @unless ($custom)
+                <p class="mx-auto mt-5 max-w-2xl leading-relaxed text-muted">
+                    Chúng tôi là một xưởng nhỏ làm quần áo bắt đầu từ tranh vẽ. Mỗi mẫu chỉ làm một đợt, số lượng ít, bán hết là thôi.
+                </p>
+            @endunless
         </header>
+
+        @if ($custom)
+            {{-- Nội dung chủ shop viết trong admin: mỗi đoạn một thẻ <p>, HTML bị thoát. --}}
+            <section class="mx-auto mt-10 max-w-2xl space-y-5" data-reveal>
+                @foreach ($custom as $paragraph)
+                    <p class="about-p leading-relaxed">{!! nl2br(e($paragraph)) !!}</p>
+                @endforeach
+            </section>
+        @else
 
         <section class="mt-16 grid gap-6 sm:grid-cols-3" data-reveal>
             @foreach ([
@@ -45,6 +59,7 @@
                 @endforeach
             </ol>
         </section>
+        @endif
 
         <section class="mt-16 rounded-card bg-surface-2 px-6 py-12 text-center" data-reveal>
             <h2 class="display text-3xl sm:text-4xl">Tìm chiếc áo <em>của riêng bạn.</em></h2>

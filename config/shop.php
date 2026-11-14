@@ -14,6 +14,9 @@ return [
     'sizes' => ['XS', 'S', 'M', 'L', 'XL'],
     'policy_lines' => ['Freeship đơn từ 500k', 'Đổi size trong 7 ngày'],
 
+    // Nội dung trang giới thiệu (các đoạn cách nhau một dòng trống). Trống thì dùng nội dung mẫu.
+    'about_body' => '',
+
     // Phí ship: mức mặc định và mức riêng theo mã tỉnh, ví dụ ['79' => 20000]
     'shipping_fee_default' => 30000,
     'shipping_fees' => [],
