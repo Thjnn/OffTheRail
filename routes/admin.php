@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\OrderExportController;
 use App\Http\Controllers\Admin\StockExportController;
+use App\Models\Customer;
 use App\Models\Product;
 use Illuminate\Support\Facades\Route;
 
@@ -32,6 +33,13 @@ Route::middleware(['auth:admin', 'admin.active'])->group(function () {
     Route::get('/kho/xuat-excel', StockExportController::class)->middleware('can:owner')->name('stock.export');
 
     Route::middleware('can:owner')->group(function () {
+        // Admin thấy toàn bộ đơn của khách, kể cả đơn trước ngày đăng ký tài khoản.
+        Route::view('/khach-hang', 'admin.customers.index')->name('customers');
+        Route::get('/khach-hang/{customer}', fn (Customer $customer) => view('admin.customers.show', [
+            'customer' => $customer->load('addresses'),
+            'orders' => $customer->orders()->latest('id')->get(),
+        ]))->name('customers.show');
+
         Route::get('/san-pham/tao', fn () => view('admin.products.form', ['product' => null]))->name('products.create');
         Route::get('/san-pham/{product:id}/sua', fn (Product $product) => view('admin.products.form', ['product' => $product]))->name('products.edit');
 
