@@ -11,6 +11,8 @@
 @section('content')
     <div class="max-w-5xl space-y-5">
         <livewire:admin.product-form :product="$product" />
-        @stack('product-media')
+        @if ($product)
+            <livewire:admin.product-media :product="$product" />
+        @endif
     </div>
 @endsection
