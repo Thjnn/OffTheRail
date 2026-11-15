@@ -9,7 +9,7 @@ const subsets = ['latin', 'vietnamese'];
 export default defineConfig({
     plugins: [
         laravel({
-            input: ['resources/css/app.css', 'resources/js/app.js', 'resources/css/admin.css', 'resources/js/admin.js'],
+            input: ['resources/css/app.css', 'resources/js/app.js', 'resources/css/admin.css', 'resources/js/admin.js', 'resources/js/labels.js'],
             refresh: true,
             fonts: [
                 bunny('Be Vietnam Pro', { weights: [400, 500, 600, 700], subsets, preload: false }),

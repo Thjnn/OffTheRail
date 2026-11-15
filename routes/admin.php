@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\AuthController;
+use App\Http\Controllers\Admin\LabelController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\OrderExportController;
 use App\Http\Controllers\Admin\StockExportController;
@@ -34,6 +35,7 @@ Route::middleware(['auth:admin', 'admin.active'])->group(function () {
     Route::get('/don-hang/{order:code}/hoa-don', [OrderController::class, 'receipt'])->name('orders.receipt');
 
     Route::view('/san-pham', 'admin.products.index')->name('products');
+    Route::get('/san-pham/{product:id}/in-tem', LabelController::class)->name('products.labels');
     Route::view('/kho', 'admin.stock.index')->name('stock');
     Route::get('/kho/xuat-excel', StockExportController::class)->middleware('can:owner')->name('stock.export');
 

@@ -20,7 +20,7 @@
 
     <div class="a-card overflow-x-auto">
         <table class="a-table">
-            <thead><tr><th class="w-14"></th><th>Sản phẩm</th><th>Danh mục</th><th class="text-right">Giá</th><th class="text-right">Tồn</th><th>Trạng thái</th>@if ($isOwner)<th></th>@endif</tr></thead>
+            <thead><tr><th class="w-14"></th><th>Sản phẩm</th><th>Danh mục</th><th class="text-right">Giá</th><th class="text-right">Tồn</th><th>Trạng thái</th><th></th></tr></thead>
             <tbody>
                 @forelse ($products as $p)
                     <tr wire:key="p{{ $p->id }}">
@@ -38,9 +38,12 @@
                         <td>
                             @if ($p->is_active)<span class="a-badge bg-green-100 text-green-800">Đang bán</span>@else<span class="a-badge bg-a-soft text-a-muted">Đang ẩn</span>@endif
                         </td>
-                        @if ($isOwner)
-                            <td class="text-right"><a href="{{ url('/admin/san-pham/'.$p->id.'/sua') }}" class="text-accent hover:underline">Sửa</a></td>
-                        @endif
+                        <td class="text-right whitespace-nowrap">
+                            <a href="{{ url('/admin/san-pham/'.$p->id.'/in-tem') }}" class="text-accent hover:underline">In tem</a>
+                            @if ($isOwner)
+                                <a href="{{ url('/admin/san-pham/'.$p->id.'/sua') }}" class="ml-3 text-accent hover:underline">Sửa</a>
+                            @endif
+                        </td>
                     </tr>
                 @empty
                     <tr><td colspan="7" class="py-8 text-center text-a-muted">Không có sản phẩm nào.</td></tr>

@@ -3,6 +3,9 @@
 @section('title', $product ? 'Sửa: '.$product->name : 'Thêm sản phẩm')
 
 @section('actions')
+    @if ($product)
+        <a href="{{ url('/admin/san-pham/'.$product->id.'/in-tem') }}" class="a-btn"><x-admin.icon name="print" class="size-4" /> In tem</a>
+    @endif
     @if ($product && $product->isVisible())
         <a href="{{ url('/san-pham/'.$product->slug) }}" target="_blank" class="a-btn">Xem trên web ↗</a>
     @endif
