@@ -58,6 +58,11 @@ class Order extends Model
         return $this->belongsTo(Customer::class);
     }
 
+    public function shift(): BelongsTo
+    {
+        return $this->belongsTo(Shift::class);
+    }
+
     public function staff(): BelongsTo
     {
         return $this->belongsTo(User::class, 'staff_id');

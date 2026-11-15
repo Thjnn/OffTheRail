@@ -17,6 +17,7 @@ class ActivityLog extends Model
         'user.role' => 'Đổi quyền',
         'user.lock' => 'Khoá tài khoản',
         'user.unlock' => 'Mở khoá tài khoản',
+        'shift.close' => 'Chốt ca',
     ];
 
     protected $guarded = [];
@@ -63,6 +64,7 @@ class ActivityLog extends Model
             $s instanceof ProductVariant => 'Biến thể '.$s->sku,
             $s instanceof Product => 'Sản phẩm '.$s->name,
             $s instanceof User => 'Nhân sự '.$s->name,
+            $s instanceof Shift => 'Ca #'.$s->id,
             $s === null && $this->subject_id !== null => '(đã xoá)',
             default => '',
         };
