@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\OrderExportController;
 use App\Http\Controllers\Admin\StockExportController;
 use App\Models\Customer;
 use App\Models\Product;
+use App\Models\Shift;
 use Illuminate\Support\Facades\Route;
 
 // Nạp trong bootstrap/app.php với middleware `web`, prefix `admin`, tên `admin.`.
@@ -21,6 +22,7 @@ Route::middleware(['auth:admin', 'admin.active'])->group(function () {
     Route::view('/', 'admin.dashboard')->name('dashboard');
 
     Route::view('/ban-tai-quay', 'admin.pos')->name('pos');
+    Route::view('/ban-tai-quay/chot-ca', 'admin.shifts.close')->name('shifts.close');
 
     Route::view('/don-hang', 'admin.orders.index')->name('orders');
     Route::view('/don-hang/shopee', 'admin.orders.shopee')->name('orders.shopee');
@@ -50,5 +52,8 @@ Route::middleware(['auth:admin', 'admin.active'])->group(function () {
         Route::get('/san-pham/{product:id}/sua', fn (Product $product) => view('admin.products.form', ['product' => $product]))->name('products.edit');
 
         Route::get('/nhat-ky', ActivityLogController::class)->name('activity');
+        Route::get('/ca', fn () => view('admin.shifts.index', [
+            'shifts' => Shift::with('user', 'closer')->latest('id')->paginate(20),
+        ]))->name('shifts');
     });
 });
