@@ -119,6 +119,28 @@ class PosTest extends TestCase
         $this->assertSame(1, \App\Models\Order::count());
     }
 
+    public function test_overlong_checkout_token_rejected(): void
+    {
+        $v = $this->variant(['stock' => 5]);
+        $staff = User::factory()->create();
+        app(ShiftService::class)->open(0, $staff);
+
+        Livewire::actingAs($staff, 'admin')->test(Pos::class)
+            ->call('checkout', [['id' => $v->id, 'qty' => 1]], 0, 'qr', null, null, null, str_repeat('a', 65))
+            ->assertHasErrors('checkout');
+
+        $this->assertSame(0, Order::count());
+    }
+
+    /** Tra mã, tra khách, lấy QR chỉ trả dữ liệu cho Alpine: không vẽ lại cả màn (và cả danh mục). */
+    public function test_data_calls_do_not_rerender(): void
+    {
+        foreach (['lookup', 'findCustomer', 'qr'] as $method) {
+            $attrs = (new \ReflectionMethod(Pos::class, $method))->getAttributes(\Livewire\Attributes\Renderless::class);
+            $this->assertCount(1, $attrs, $method);
+        }
+    }
+
     public function test_failed_checkout_lets_same_token_retry(): void
     {
         $v = $this->variant(['stock' => 5, 'price' => 100000]);

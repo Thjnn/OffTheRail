@@ -10,6 +10,7 @@ use App\Models\Customer;
 use App\Models\Order;
 use App\Models\ProductVariant;
 use App\Models\Province;
+use App\Models\Shift;
 use App\Models\User;
 use App\Models\Ward;
 use App\Support\Inventory;
@@ -219,7 +220,9 @@ class OrderService
         }
 
         return DB::transaction(function () use ($items, $discount, $method, $cashReceived, $normalizedPhone, $name, $by) {
-            $shift = app(ShiftService::class)->current()
+            // Khoá dòng ca: ShiftService::close cũng khoá nó, nên đơn đang lưu và lệnh chốt ca chạy lần lượt —
+            // đơn không lọt vào ca vừa chốt mà thiếu trong tiền kỳ vọng.
+            $shift = Shift::open()->lockForUpdate()->first()
                 ?? throw new OrderActionException('Chưa mở ca. Mở ca trước khi bán.');
 
             [$variants, $subtotal] = $this->priced($items);

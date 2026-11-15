@@ -13,6 +13,7 @@ use App\Support\Phone;
 use App\Support\VietQr;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Cache;
+use Livewire\Attributes\Renderless;
 use Livewire\Component;
 
 /**
@@ -52,6 +53,7 @@ class Pos extends Component
     }
 
     /** Mã quét không có trong danh sách đã nạp (ví dụ sản phẩm vừa tạo): tìm theo mã vạch hoặc SKU. */
+    #[Renderless]
     public function lookup(string $code): ?array
     {
         $code = trim($code);
@@ -69,6 +71,7 @@ class Pos extends Component
     }
 
     /** @return array{name: string, orders_count: int}|null */
+    #[Renderless]
     public function findCustomer(string $phone): ?array
     {
         $normalized = Phone::normalize($phone);
@@ -77,6 +80,7 @@ class Pos extends Component
         return $customer ? ['name' => $customer->name, 'orders_count' => (int) $customer->orders_count] : null;
     }
 
+    #[Renderless]
     public function qr(int $amount): ?string
     {
         return VietQr::image(max(0, $amount), 'POS '.now()->format('dmHi'));
@@ -90,6 +94,13 @@ class Pos extends Component
         foreach ($lines as $line) {
             $id = (int) ($line['id'] ?? 0);
             $items[$id] = ($items[$id] ?? 0) + (int) ($line['qty'] ?? 0);
+        }
+
+        // Token do Alpine tạo (UUID, 36 ký tự). Giới hạn độ dài vì nó nằm trong khoá cache (cột 255 ký tự).
+        if ($token === '' || strlen($token) > 64) {
+            $this->addError('checkout', 'Phiên thanh toán không hợp lệ, tải lại trang rồi thử lại.');
+
+            return null;
         }
 
         // Bấm "Thanh toán" hai lần: lần sau cùng token bị bỏ qua.
