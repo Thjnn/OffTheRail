@@ -6,16 +6,18 @@ use App\Enums\OrderStatus;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Models\Shift;
 use App\Models\User;
 use App\Models\Ward;
 use App\Services\OrderService;
+use App\Services\ShiftService;
 use App\Support\Inventory;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
 /**
- * ~200 đơn trải đều 60 ngày qua (Web ~75%, Shopee ~25%) để biểu đồ và các bảng admin có số liệu.
+ * ~200 đơn trải đều 60 ngày qua (Web ~55%, Quầy ~25% trong các ca đã chốt, Shopee ~20%) để biểu đồ và các bảng admin có số liệu.
  * Đơn đi qua đúng OrderService nên kho, log trạng thái và số liệu khách đều khớp. Chạy lại không tạo thêm.
  */
 class DemoOrderSeeder extends Seeder
@@ -26,7 +28,10 @@ class DemoOrderSeeder extends Seeder
 
     private Carbon $realNow;
 
-    public function run(OrderService $orders): void
+    /** Ca bán tại quầy đang mở trong lúc seed. */
+    private ?Shift $shift = null;
+
+    public function run(OrderService $orders, ShiftService $shifts): void
     {
         if (Order::count() >= 100) {
             return;
@@ -56,10 +61,18 @@ class DemoOrderSeeder extends Seeder
                 $available = $variants->filter(fn ($v) => $v->product->published_at === null || $v->product->published_at->lte($at));
                 $items = $this->pickItems($available, $owner);
 
-                if (mt_rand(1, 100) <= 25) {
-                    $subtotal = collect($items)->sum(fn ($qty, $id) => ($variants->find($id)->price ?? $variants->find($id)->product->price) * $qty);
+                $subtotal = collect($items)->sum(fn ($qty, $id) => ($variants->find($id)->price ?? $variants->find($id)->product->price) * $qty);
+                $channel = mt_rand(1, 100);
+
+                if ($channel <= 20) {
                     $code = $at->format('ymd').strtoupper(fake()->bothify('??####'));
                     $orders->placeShopeeOrder($code, $items, (int) (round($subtotal * 0.9 / 1000) * 1000), $staff->random());
+
+                    continue;
+                }
+
+                if ($channel <= 45) {
+                    $this->counterSale($orders, $shifts, $items, $subtotal, $at, $staff, $customers);
 
                     continue;
                 }
@@ -75,6 +88,11 @@ class DemoOrderSeeder extends Seeder
 
                 $this->advance($orders, $order, $at, $staff->random());
             }
+
+            // Ca cuối: hôm nay thì để mở cho demo bán được ngay, ngày cũ thì chốt.
+            if ($this->shift && ! $this->shift->opened_at->isSameDay($this->realNow)) {
+                $this->closeShift($shifts);
+            }
         } finally {
             Carbon::setTestNow();
         }
@@ -83,6 +101,41 @@ class DemoOrderSeeder extends Seeder
         foreach ($variants->shuffle()->take(5) as $variant) {
             Inventory::adjust($variant->id, 'count', mt_rand(1, 2), 'Kiểm kho demo', $owner);
         }
+    }
+
+    /**
+     * Một đơn tại quầy trong ca của ngày đó: ca mở lúc 8h (1 triệu đầu ca), chốt 22h.
+     * 70% tiền mặt (khách đưa tròn 50k), 30% QR; 30% có SĐT khách; 15% được giảm 5%.
+     */
+    private function counterSale(OrderService $orders, ShiftService $shifts, array $items, int $subtotal, Carbon $at, Collection $staff, Collection $customers): void
+    {
+        if ($this->shift && ! $this->shift->opened_at->isSameDay($at)) {
+            $this->closeShift($shifts);
+        }
+
+        if (! $this->shift) {
+            Carbon::setTestNow($at->copy()->setTime(8, 0)->min($at));
+            $this->shift = $shifts->open(1000000, $staff->random());
+            Carbon::setTestNow($at);
+        }
+
+        $discount = mt_rand(1, 100) <= 15 ? (int) (floor($subtotal * 0.05 / 1000) * 1000) : 0;
+        $cash = mt_rand(1, 100) <= 70;
+        $who = mt_rand(1, 100) <= 30 ? $customers->random() : null;
+
+        $orders->placePosOrder($items, $discount, $cash ? 'cash' : 'qr',
+            $cash ? (int) (ceil(($subtotal - $discount) / 50000) * 50000) : null,
+            $who['phone'] ?? null, $who['name'] ?? null, $staff->random());
+    }
+
+    /** Chốt ca lúc 22h: đa số đếm khớp, ~20% ca lệch từ −20k đến +10k. */
+    private function closeShift(ShiftService $shifts): void
+    {
+        Carbon::setTestNow($this->shift->opened_at->copy()->setTime(22, 0)->min($this->realNow));
+        $expected = $this->shift->opening_cash + $this->shift->cashSales();
+        $off = mt_rand(1, 100) <= 20 ? (mt_rand(0, 1) ? -mt_rand(1, 10) : mt_rand(1, 5)) * 2000 : 0;
+        $shifts->close($this->shift, $expected + $off, $this->shift->user, $off ? 'Lệch khi đếm két' : null);
+        $this->shift = null;
     }
 
     /** @return list<Carbon> mốc thời gian tăng dần, cuối tuần dày hơn, giờ 8h–22h */

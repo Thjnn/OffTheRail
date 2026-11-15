@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Customer;
 use App\Models\Order;
 use App\Models\ProductVariant;
+use App\Models\Shift;
 use App\Models\User;
 use App\Support\SalesReport;
 use Database\Seeders\DemoCustomerSeeder;
@@ -63,5 +64,13 @@ class DemoSeedTest extends TestCase
         $this->assertTrue(Order::where('status', 'pending')->where('channel', 'web')->exists());
         $this->assertGreaterThan(0, ProductVariant::lowStock()->count());
         $this->assertSame(0, ProductVariant::where('stock', '<', 0)->count());
+
+        // Bán tại quầy: đơn nào cũng thuộc một ca, vài ca đã chốt, tối đa một ca đang mở.
+        $this->assertGreaterThan(0, array_sum($daily['series']['pos']));
+        $this->assertGreaterThan(20, Order::where('channel', 'pos')->count());
+        $this->assertSame(0, Order::where('channel', 'pos')->whereNull('shift_id')->count());
+        $this->assertGreaterThan(3, Shift::whereNotNull('closed_at')->count());
+        $this->assertLessThanOrEqual(1, Shift::open()->count());
+        $this->assertTrue(Shift::whereNotNull('closed_at')->whereColumn('counted_cash', '!=', 'expected_cash')->exists());
     }
 }

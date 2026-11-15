@@ -21,6 +21,7 @@ class AdminRoutesTest extends TestCase
         $this->seed();
 
         $order = Order::where('channel', 'web')->firstOrFail()->code;
+        $posOrder = Order::where('channel', 'pos')->firstOrFail()->code;
         $product = Product::firstOrFail()->id;
         $customer = Customer::firstOrFail()->id;
 
@@ -44,6 +45,11 @@ class AdminRoutesTest extends TestCase
             ['/admin/nhat-ky', true],
             ['/admin/don-hang/xuat-excel', true],
             ['/admin/kho/xuat-excel', true],
+            ['/admin/ban-tai-quay', false],
+            ['/admin/ban-tai-quay/chot-ca', false],
+            ['/admin/ca', true],
+            ["/admin/san-pham/{$product}/in-tem", false],
+            ["/admin/don-hang/{$posOrder}/hoa-don", false],
         ];
 
         $owner = User::firstWhere('email', 'owner@demo.test');

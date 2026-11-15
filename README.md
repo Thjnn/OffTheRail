@@ -1,6 +1,6 @@
 # Off the Rail v2
 
-Hệ thống bán hàng cho một cửa hàng quần áo ở Việt Nam, viết bằng Laravel: web cho khách xem và đặt hàng, admin cho chủ shop và nhân viên; máy bán tại quầy (POS) sẽ có ở Kế hoạch 4.
+Hệ thống bán hàng cho một cửa hàng quần áo ở Việt Nam, viết bằng Laravel: web cho khách xem và đặt hàng, admin cho chủ shop và nhân viên, và máy bán tại quầy (POS) có chốt ca.
 
 Thiết kế đầy đủ: [`docs/superpowers/specs/2026-11-13-offtherail-laravel-design.md`](docs/superpowers/specs/2026-11-13-offtherail-laravel-design.md)
 
@@ -24,11 +24,20 @@ Thiết kế đầy đủ: [`docs/superpowers/specs/2026-11-13-offtherail-larave
   - Nhật ký thao tác nhạy cảm: sửa giá, sửa kho, huỷ/hoàn đơn, đổi quyền, khoá tài khoản.
   - Báo đơn web mới: số đếm trên menu (tự cập nhật 30 giây), tiếng "ting", email về địa chỉ trong Cài đặt.
 
-Còn làm tiếp: POS, chốt ca, in tem mã vạch (Kế hoạch 4).
+- **Bán tại quầy `/admin/ban-tai-quay`** (chủ shop và nhân viên):
+  - Mở ca với tiền đầu ca; phải có ca đang mở mới bán được. Cả shop dùng chung một két, nên chỉ có một ca mở tại một thời điểm.
+  - Quét mã vạch bằng máy quét USB (máy quét gõ như bàn phím) hoặc gõ mã / SKU rồi Enter. Mã được tra ngay trên trình duyệt nên quét liên tục không bị trễ; mã chưa có trong danh sách mới hỏi server.
+  - Bấm sản phẩm trên lưới để chọn màu / size, lọc theo danh mục.
+  - Gắn khách bằng SĐT (tự nhận khách quen, khách mới thì tạo hồ sơ), giảm giá tay (nhân viên bị giới hạn theo % trong Cài đặt).
+  - Thu tiền mặt (nhập tiền khách đưa, nút mệnh giá nhanh, tiền thối) hoặc QR (VietQR hiện trên màn hình, bấm "Đã nhận tiền"). Bấm thanh toán hai lần vẫn chỉ ra một đơn.
+  - Xong là trừ kho ngay và in hoá đơn khổ 80mm.
+  - Chốt ca: nhập tiền đếm được trong két. Nhân viên chốt "mù" (không thấy tiền kỳ vọng); chủ shop xem chênh lệch từng ca ở mục **Ca bán hàng**.
+  - Trả hàng tại quầy: chủ shop huỷ nguyên đơn ở trang chi tiết đơn (hoàn kho), rồi lập đơn mới.
+- **In tem mã vạch** (Code128, tem 50 × 30 mm): nút "In tem" ở danh sách sản phẩm, mặc định in bằng số đang tồn.
 
 ## Công nghệ
 
-Laravel 13 · PHP 8.3 · MySQL · Livewire 4 · Tailwind CSS 4 · Vite · Swiper · GSAP · ApexCharts · OpenSpout · PHPUnit
+Laravel 13 · PHP 8.3 · MySQL · Livewire 4 · Tailwind CSS 4 · Vite · Swiper · GSAP · ApexCharts · OpenSpout · JsBarcode · PHPUnit
 
 ## Chạy thử
 
@@ -54,7 +63,9 @@ Mở http://127.0.0.1:8000.
 | Chủ shop | `owner@demo.test` tại `/admin/dang-nhap` | `matkhau123` |
 | Nhân viên | `nhanvien1@demo.test`, `nhanvien2@demo.test` | `matkhau123` |
 
-Tài khoản khách có sẵn 2 đơn (1 đơn đã huỷ), 1 địa chỉ và 2 món yêu thích. Dữ liệu demo có thêm khoảng 200 đơn Web và Shopee trải đều từ lúc sản phẩm đầu tiên lên kệ (gần 60 ngày) để biểu đồ có số liệu.
+Tài khoản khách có sẵn 2 đơn (1 đơn đã huỷ), 1 địa chỉ và 2 món yêu thích. Dữ liệu demo có thêm khoảng 200 đơn Web, Tại quầy và Shopee trải đều từ lúc sản phẩm đầu tiên lên kệ (gần 60 ngày) để biểu đồ có số liệu. Đơn tại quầy nằm trong các ca đã chốt (vài ca có lệch tiền); nếu hôm nay có đơn quầy thì ca hôm nay để mở sẵn.
+
+**Thử bán tại quầy:** đăng nhập nhân viên → **Bán tại quầy** → (mở ca nếu chưa có) → gõ mã vạch `893000000001` rồi Enter (thay máy quét) → chọn Tiền mặt, bấm mệnh giá → **Thanh toán** → trang hoá đơn 80mm tự mở hộp in → **Chốt ca**.
 
 ### Email báo đơn mới
 
