@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Http\Middleware\EnsureStaffActive;
 use App\Models\Category;
 use App\Models\User;
 use App\Support\ShopSettings;
@@ -10,6 +11,7 @@ use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
+use Livewire\Livewire;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -22,6 +24,9 @@ class AppServiceProvider extends ServiceProvider
     {
         // Chỉ hai vai trò cố định. Route admin chạy `auth:admin` trước nên Gate nhận đúng User.
         Gate::define('owner', fn ($user) => $user instanceof User && $user->isOwner());
+
+        // Request Livewire (bấm bán, sửa kho… từ tab đang mở) cũng phải qua bước kiểm tra tài khoản bị khoá.
+        Livewire::addPersistentMiddleware([EnsureStaffActive::class]);
 
         ResetPassword::toMailUsing(fn ($notifiable, string $token) => (new MailMessage)
             ->subject('Đặt lại mật khẩu · '.shop('name'))

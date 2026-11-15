@@ -23,6 +23,9 @@ class Pos extends Component
 {
     public ?int $openingCash = null;
 
+    /** Màn bán đã hiện thì giữ nguyên dù ca bị chốt ở tab khác — để không mất hoá đơn đang lập trong Alpine. */
+    public bool $registerShown = false;
+
     public function openShift(ShiftService $shifts): void
     {
         $this->validate(['openingCash' => ['required', 'integer', 'min:0']], [], ['openingCash' => 'tiền đầu ca']);
@@ -117,10 +120,11 @@ class Pos extends Component
     {
         $shift = $shifts->current();
         $user = auth('admin')->user();
+        $this->registerShown = $this->registerShown || $shift !== null;
 
         return view('livewire.admin.pos', [
             'shift' => $shift,
-            'catalog' => $shift ? $this->catalog() : null,
+            'catalog' => $this->registerShown ? $this->catalog() : null,
             'maxDiscountPercent' => $user->isOwner() ? null : (int) shop('staff_max_discount_percent'),
             'qrReady' => VietQr::isConfigured(),
         ]);

@@ -104,4 +104,12 @@ class StaffAdminTest extends TestCase
         $this->actingAs($staff, 'admin')->get('/admin/nhan-vien')->assertForbidden();
         Livewire::actingAs($staff, 'admin')->test(StaffManager::class)->assertForbidden();
     }
+
+    /** Tài khoản bị khoá giữa ca: request Livewire từ tab đang mở (bán hàng, sửa kho…) cũng phải bị chặn. */
+    public function test_staff_lock_check_also_runs_on_livewire_requests(): void
+    {
+        $persistent = app(\Livewire\Mechanisms\PersistentMiddleware\PersistentMiddleware::class)->getPersistentMiddleware();
+
+        $this->assertContains(\App\Http\Middleware\EnsureStaffActive::class, $persistent);
+    }
 }

@@ -96,6 +96,29 @@ class PosTest extends TestCase
         $this->assertSame(0, Order::count());
     }
 
+    /** Ca bị chốt ở tab khác: vẫn ở màn bán (giỏ Alpine còn nguyên), thấy lỗi, mở ca ngay tại chỗ rồi bán tiếp. */
+    public function test_shift_closed_elsewhere_keeps_register_and_reopens_inline(): void
+    {
+        $v = $this->variant(['stock' => 5]);
+        $staff = User::factory()->create();
+        $shifts = app(ShiftService::class);
+        $shift = $shifts->open(0, $staff);
+        $pos = Livewire::actingAs($staff, 'admin')->test(Pos::class);
+        $shifts->close($shift, 0, $staff);
+        $lines = [['id' => $v->id, 'qty' => 1]];
+
+        $pos->call('checkout', $lines, 0, 'qr', null, null, null, 'tok-1')
+            ->assertHasErrors('checkout')
+            ->assertSee('Chưa mở ca')
+            ->assertSee('x-data="pos(', false)
+            ->set('openingCash', 0)->call('openShift')
+            ->assertSee('x-data="pos(', false)
+            ->call('checkout', $lines, 0, 'qr', null, null, null, 'tok-1')
+            ->assertHasNoErrors();
+
+        $this->assertSame(1, \App\Models\Order::count());
+    }
+
     public function test_failed_checkout_lets_same_token_retry(): void
     {
         $v = $this->variant(['stock' => 5, 'price' => 100000]);

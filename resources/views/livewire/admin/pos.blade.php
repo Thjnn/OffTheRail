@@ -1,5 +1,5 @@
 <div>
-    @if (! $shift)
+    @if (! $registerShown)
         <div class="a-card mx-auto mt-10 max-w-sm p-6">
             <h2 class="text-base font-semibold">Mở ca</h2>
             <p class="mt-1 text-a-muted">Chưa có ca nào đang mở. Đếm tiền trong két rồi nhập số tiền đầu ca để bắt đầu bán.</p>
@@ -16,10 +16,23 @@
         <div x-data="pos(@js($catalog), @js($maxDiscountPercent))" x-on:keydown.window="refocus($event)" class="grid gap-4 lg:grid-cols-[1fr_380px]">
             {{-- Trái: quét / tìm + lưới sản phẩm --}}
             <section class="min-w-0 space-y-3">
-                <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-a-muted">
-                    <span>Ca của <strong class="text-a-ink">{{ $shift->user->name }}</strong> · mở lúc {{ $shift->opened_at->format('H:i d/m') }}</span>
-                    <a href="{{ url('/admin/ban-tai-quay/chot-ca') }}" class="a-btn">Chốt ca</a>
-                </div>
+                @if ($shift)
+                    <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-a-muted">
+                        <span>Ca của <strong class="text-a-ink">{{ $shift->user->name }}</strong> · mở lúc {{ $shift->opened_at->format('H:i d/m') }}</span>
+                        <a href="{{ url('/admin/ban-tai-quay/chot-ca') }}" class="a-btn">Chốt ca</a>
+                    </div>
+                @else
+                    {{-- Ca vừa bị chốt ở nơi khác: mở ca mới ngay tại đây, hoá đơn đang lập vẫn giữ nguyên. --}}
+                    <form wire:submit="openShift" class="flex flex-wrap items-end gap-2 rounded-md border border-a-down/30 bg-a-down/5 px-3 py-2" role="alert">
+                        <p class="w-full text-a-down">Ca đã được chốt. Mở ca mới để tiếp tục bán — hoá đơn đang lập vẫn còn.</p>
+                        <div>
+                            <label class="a-label" for="reopenCash">Tiền đầu ca (đ)</label>
+                            <input id="reopenCash" type="number" min="0" step="1000" inputmode="numeric" wire:model="openingCash" class="a-input w-36">
+                        </div>
+                        <button class="a-btn a-btn-primary" wire:loading.attr="disabled">Mở ca</button>
+                        @error('openingCash')<p class="a-error w-full">{{ $message }}</p>@enderror
+                    </form>
+                @endif
 
                 <form x-on:submit.prevent="scan()" class="relative">
                     <x-admin.icon name="search" class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-a-muted" />
