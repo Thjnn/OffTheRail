@@ -55,6 +55,14 @@ class OrderController extends Controller
         return back()->with('status', 'Đã ghi nhận thanh toán.');
     }
 
+    /** Hoá đơn 80mm của đơn bán tại quầy. */
+    public function receipt(Order $order): View
+    {
+        abort_unless($order->channel === 'pos', 404);
+
+        return view('admin.orders.receipt', ['order' => $order->load('items', 'staff')]);
+    }
+
     public function print(Order $order): View
     {
         return view('admin.orders.print', ['order' => $order->load('items')]);

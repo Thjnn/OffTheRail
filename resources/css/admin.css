@@ -86,3 +86,19 @@
         @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap;
     }
 }
+
+/* POS: dòng vừa thêm vào hoá đơn nháy nền nhẹ */
+@keyframes pos-flash {
+    from { background-color: color-mix(in srgb, var(--color-accent) 14%, transparent); }
+    to { background-color: transparent; }
+}
+
+.pos-flash {
+    animation: pos-flash 0.6s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pos-flash {
+        animation: none;
+    }
+}

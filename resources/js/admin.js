@@ -1,3 +1,5 @@
+import './pos';
+
 // ---- Biểu đồ doanh thu: mọi phần tử [data-chart] chứa {labels, series: {web, pos, shopee}} ----
 // ApexCharts khá nặng nên chỉ tải khi trang có biểu đồ.
 const vnd = new Intl.NumberFormat('vi-VN');

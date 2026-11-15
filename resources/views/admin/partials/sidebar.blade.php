@@ -2,6 +2,7 @@
     $user = auth('admin')->user();
     $items = [
         ['/admin', 'dashboard', 'Tổng quan', false],
+        ['/admin/ban-tai-quay', 'pos', 'Bán tại quầy', false],
         ['/admin/don-hang', 'orders', 'Đơn hàng', false],
         ['/admin/san-pham', 'products', 'Sản phẩm', false],
         ['/admin/kho', 'stock', 'Kho hàng', false],

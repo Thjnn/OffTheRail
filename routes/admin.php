@@ -20,6 +20,8 @@ Route::middleware(['auth:admin', 'admin.active'])->group(function () {
     Route::post('/dang-xuat', [AuthController::class, 'logout'])->name('logout');
     Route::view('/', 'admin.dashboard')->name('dashboard');
 
+    Route::view('/ban-tai-quay', 'admin.pos')->name('pos');
+
     Route::view('/don-hang', 'admin.orders.index')->name('orders');
     Route::view('/don-hang/shopee', 'admin.orders.shopee')->name('orders.shopee');
     Route::get('/don-hang/xuat-excel', OrderExportController::class)->middleware('can:owner')->name('orders.export');
@@ -27,6 +29,7 @@ Route::middleware(['auth:admin', 'admin.active'])->group(function () {
     Route::post('/don-hang/{order:code}/trang-thai', [OrderController::class, 'updateStatus'])->name('orders.status');
     Route::post('/don-hang/{order:code}/da-thanh-toan', [OrderController::class, 'markPaid'])->name('orders.paid');
     Route::get('/don-hang/{order:code}/in', [OrderController::class, 'print'])->name('orders.print');
+    Route::get('/don-hang/{order:code}/hoa-don', [OrderController::class, 'receipt'])->name('orders.receipt');
 
     Route::view('/san-pham', 'admin.products.index')->name('products');
     Route::view('/kho', 'admin.stock.index')->name('stock');

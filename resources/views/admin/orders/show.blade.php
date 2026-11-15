@@ -4,7 +4,11 @@
 
 @section('actions')
     <a href="{{ url('/admin/don-hang') }}" class="a-btn">← Danh sách</a>
-    <a href="{{ url('/admin/don-hang/'.$order->code.'/in') }}" target="_blank" class="a-btn"><x-admin.icon name="print" class="size-4" /> In phiếu</a>
+    @if ($order->channel === 'pos')
+        <a href="{{ url('/admin/don-hang/'.$order->code.'/hoa-don') }}" target="_blank" class="a-btn"><x-admin.icon name="print" class="size-4" /> In hoá đơn</a>
+    @else
+        <a href="{{ url('/admin/don-hang/'.$order->code.'/in') }}" target="_blank" class="a-btn"><x-admin.icon name="print" class="size-4" /> In phiếu</a>
+    @endif
 @endsection
 
 @section('content')
