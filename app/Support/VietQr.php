@@ -11,11 +11,17 @@ class VietQr
         return filled(shop('bank_bin')) && filled(shop('bank_account_no'));
     }
 
+    /** Ảnh mã VietQR của đơn: số tiền = tổng đơn, nội dung = mã đơn. */
+    public static function url(Order $order): ?string
+    {
+        return self::image($order->total, $order->code);
+    }
+
     /**
-     * Ảnh mã VietQR có sẵn số tiền và nội dung = mã đơn.
+     * Ảnh mã VietQR có sẵn số tiền và nội dung chuyển khoản. Null khi shop chưa cài tài khoản.
      * ponytail: phụ thuộc dịch vụ img.vietqr.io; muốn bỏ thì tự dựng chuỗi EMVCo + thư viện vẽ QR.
      */
-    public static function url(Order $order): ?string
+    public static function image(int $amount, string $info): ?string
     {
         if (! self::isConfigured()) {
             return null;
@@ -25,8 +31,8 @@ class VietQr
             'https://img.vietqr.io/image/%s-%s-compact2.png?amount=%d&addInfo=%s&accountName=%s',
             urlencode((string) shop('bank_bin')),
             urlencode((string) shop('bank_account_no')),
-            $order->total,
-            urlencode($order->code),
+            $amount,
+            urlencode($info),
             urlencode((string) shop('bank_account_name')),
         );
     }

@@ -164,13 +164,7 @@ class OrderService
 
         try {
             return DB::transaction(function () use ($code, $items, $amountReceived, $by) {
-                $variants = ProductVariant::with('product', 'color')->whereKey(array_keys($items))->get()->keyBy('id');
-                $subtotal = 0;
-
-                foreach ($items as $variantId => $qty) {
-                    $variant = $variants->get($variantId) ?? throw new OutOfStockException(['một sản phẩm đã bị xoá']);
-                    $subtotal += ($variant->price ?? $variant->product->price) * $qty;
-                }
+                [$variants, $subtotal] = $this->priced($items);
 
                 $order = Order::create([
                     'code' => Order::generateCode(),
@@ -188,39 +182,140 @@ class OrderService
                     'staff_id' => $by->id,
                 ]);
 
-                $unavailable = [];
-
-                foreach ($items as $variantId => $qty) {
-                    $variant = $variants->get($variantId);
-
-                    if (! Inventory::take($variant->id, $qty, 'sale', $order, $by->id)) {
-                        $unavailable[] = $this->label($variant);
-
-                        continue;
-                    }
-
-                    $order->items()->create([
-                        'variant_id' => $variant->id,
-                        'name' => $variant->product->name,
-                        'color' => $variant->color?->name,
-                        'size' => $variant->size,
-                        'sku' => $variant->sku,
-                        'unit_price' => $variant->price ?? $variant->product->price,
-                        'qty' => $qty,
-                    ]);
-                }
-
-                if ($unavailable !== []) {
-                    throw new OutOfStockException($unavailable);
-                }
-
-                $order->statusLogs()->create(['from' => null, 'to' => OrderStatus::Completed, 'user_id' => $by->id]);
-
-                return $order;
+                return $this->fillCompleted($order, $variants, $items, $by);
             });
         } catch (UniqueConstraintViolationException) {
             throw $duplicate(); // hai người nhập cùng mã cùng lúc: chỉ mục unique chặn người sau
         }
+    }
+
+    /**
+     * Đơn bán tại quầy: tạo + trừ kho + hoàn thành + đã trả trong một transaction, gắn vào ca đang mở.
+     *
+     * @param  array<int, int>  $items  [variantId => qty]
+     * @param  'cash'|'qr'  $method
+     *
+     * @throws OrderActionException chưa mở ca, giảm giá/tiền khách đưa/SĐT không hợp lệ (không có gì được lưu)
+     * @throws OutOfStockException không đủ hàng (không có gì được lưu)
+     */
+    public function placePosOrder(array $items, int $discount, string $method, ?int $cashReceived, ?string $phone, ?string $name, User $by): Order
+    {
+        $items = array_filter(array_map('intval', $items), fn (int $qty) => $qty > 0);
+        $phone = trim((string) $phone);
+        $name = trim((string) $name);
+
+        if ($items === []) {
+            throw new OrderActionException('Hoá đơn chưa có món nào.');
+        }
+
+        if (! in_array($method, ['cash', 'qr'], true)) {
+            throw new OrderActionException('Hình thức thanh toán không hợp lệ.');
+        }
+
+        $normalizedPhone = null;
+
+        if ($phone !== '' && ($normalizedPhone = Phone::normalize($phone)) === null) {
+            throw new OrderActionException('Số điện thoại không hợp lệ.');
+        }
+
+        return DB::transaction(function () use ($items, $discount, $method, $cashReceived, $normalizedPhone, $name, $by) {
+            $shift = app(ShiftService::class)->current()
+                ?? throw new OrderActionException('Chưa mở ca. Mở ca trước khi bán.');
+
+            [$variants, $subtotal] = $this->priced($items);
+
+            if ($discount < 0 || $discount > $subtotal) {
+                throw new OrderActionException('Mức giảm giá không hợp lệ.');
+            }
+
+            $maxPercent = (int) shop('staff_max_discount_percent');
+
+            if (! $by->isOwner() && $discount > intdiv($subtotal * $maxPercent, 100)) {
+                throw new OrderActionException("Nhân viên chỉ được giảm tối đa {$maxPercent}%.");
+            }
+
+            $total = $subtotal - $discount;
+
+            if ($method === 'cash' && (int) $cashReceived < $total) {
+                throw new OrderActionException('Tiền khách đưa chưa đủ.');
+            }
+
+            $customer = $normalizedPhone ? Customer::forPhone($normalizedPhone, $name ?: 'Khách tại quầy') : null;
+
+            $order = Order::create([
+                'code' => Order::generateCode(),
+                'channel' => 'pos',
+                'customer_id' => $customer?->id,
+                'customer_name' => $customer?->name ?? 'Khách lẻ',
+                'customer_phone' => $normalizedPhone,
+                'status' => OrderStatus::Completed,
+                'payment_method' => $method,
+                'payment_status' => 'paid',
+                'paid_at' => now(),
+                'subtotal' => $subtotal,
+                'discount' => $discount,
+                'shipping_fee' => 0,
+                'total' => $total,
+                'cash_received' => $method === 'cash' ? $cashReceived : null,
+                'staff_id' => $by->id,
+                'shift_id' => $shift->id,
+            ]);
+
+            return $this->fillCompleted($order, $variants, $items, $by);
+        });
+    }
+
+    /**
+     * Nạp biến thể và tính tạm tính theo giá DB.
+     *
+     * @param  array<int, int>  $items
+     * @return array{0: \Illuminate\Support\Collection<int, ProductVariant>, 1: int}
+     */
+    private function priced(array $items): array
+    {
+        $variants = ProductVariant::with('product', 'color')->whereKey(array_keys($items))->get()->keyBy('id');
+        $subtotal = 0;
+
+        foreach ($items as $variantId => $qty) {
+            $variant = $variants->get($variantId) ?? throw new OutOfStockException(['một sản phẩm đã bị xoá']);
+            $subtotal += ($variant->price ?? $variant->product->price) * $qty;
+        }
+
+        return [$variants, $subtotal];
+    }
+
+    /** Trừ kho + ghi món + log "hoàn thành" cho đơn quầy/Shopee. Thiếu hàng → OutOfStockException (transaction ngoài rollback). */
+    private function fillCompleted(Order $order, $variants, array $items, User $by): Order
+    {
+        $unavailable = [];
+
+        foreach ($items as $variantId => $qty) {
+            $variant = $variants->get($variantId);
+
+            if (! Inventory::take($variant->id, $qty, 'sale', $order, $by->id)) {
+                $unavailable[] = $this->label($variant);
+
+                continue;
+            }
+
+            $order->items()->create([
+                'variant_id' => $variant->id,
+                'name' => $variant->product->name,
+                'color' => $variant->color?->name,
+                'size' => $variant->size,
+                'sku' => $variant->sku,
+                'unit_price' => $variant->price ?? $variant->product->price,
+                'qty' => $qty,
+            ]);
+        }
+
+        if ($unavailable !== []) {
+            throw new OutOfStockException($unavailable);
+        }
+
+        $order->statusLogs()->create(['from' => null, 'to' => OrderStatus::Completed, 'user_id' => $by->id]);
+
+        return $order;
     }
 
     /** Huỷ đơn đang chờ/đã xác nhận và hoàn kho (lệnh tự huỷ). Trả false nếu đơn không còn huỷ được (kể cả đã huỷ rồi). */
